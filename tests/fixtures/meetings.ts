@@ -1,4 +1,4 @@
-import type { Meeting, People, Person, Utterance } from '../../src/types.js';
+import type { DocumentPanel, Meeting, People, Person, Utterance } from '../../src/types.js';
 
 export const mockMeeting: Meeting = {
   id: 'a1b2c3d4-e5f6-g7h8-i9j0-k1l2m3n4o5p6',
@@ -132,6 +132,39 @@ export const mockAttendees: Person[] = [
 export const mockPeople: People = {
   creator: mockPerson,
   attendees: mockAttendees,
+};
+
+export const mockConsolidatedPanel: DocumentPanel = {
+  document_id: 'a1b2c3d4-e5f6-g7h8-i9j0-k1l2m3n4o5p6',
+  id: 'panel-001',
+  template_slug: 'meeting-summary-consolidated',
+  title: 'Summary',
+  content: {
+    type: 'doc',
+    content: [
+      {
+        type: 'heading',
+        attrs: { level: 2 },
+        content: [{ type: 'text', text: 'Sprint Planning' }],
+      },
+      {
+        type: 'bulletList',
+        content: [
+          {
+            type: 'listItem',
+            content: [
+              {
+                type: 'paragraph',
+                content: [{ type: 'text', text: 'Sprint goal: finish the auth flow' }],
+              },
+            ],
+          },
+        ],
+      },
+    ],
+  },
+  created_at: '2026-05-20T09:00:00Z',
+  updated_at: '2026-05-20T10:30:00Z',
 };
 
 export const mockMeetingWithPeople: Meeting = {

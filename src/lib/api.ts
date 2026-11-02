@@ -1,4 +1,4 @@
-import type { Meeting, Person, ProseMirrorDoc } from '../types.js';
+import type { DocumentPanel, Meeting, Person, ProseMirrorDoc } from '../types.js';
 import type { HttpClient } from './http.js';
 
 export interface GetDocumentsOptions {
@@ -93,6 +93,7 @@ export interface GranolaApi {
   getDocuments(options?: GetDocumentsOptions): Promise<DocumentsResponse>;
   getDocumentsBatch(options: GetDocumentsBatchOptions): Promise<DocumentsBatchResponse>;
   getDocumentMetadata(documentId: string): Promise<DocumentMetadata>;
+  getDocumentPanels(documentId: string): Promise<DocumentPanel[]>;
   getDocumentTranscript(documentId: string): Promise<TranscriptSegment[]>;
   getDocumentLists(): Promise<DocumentList[]>;
   getDocumentList(folderId: string): Promise<DocumentList | null>;
@@ -125,6 +126,12 @@ export function createApiClient(httpClient: HttpClient): GranolaApi {
 
   async function getDocumentMetadata(documentId: string): Promise<DocumentMetadata> {
     return httpClient.post<DocumentMetadata>('/v1/get-document-metadata', {
+      document_id: documentId,
+    });
+  }
+
+  async function getDocumentPanels(documentId: string): Promise<DocumentPanel[]> {
+    return httpClient.post<DocumentPanel[]>('/v1/get-document-panels', {
       document_id: documentId,
     });
   }
@@ -163,6 +170,7 @@ export function createApiClient(httpClient: HttpClient): GranolaApi {
     getDocuments,
     getDocumentsBatch,
     getDocumentMetadata,
+    getDocumentPanels,
     getDocumentTranscript,
     getDocumentLists,
     getDocumentList,

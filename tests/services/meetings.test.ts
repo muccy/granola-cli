@@ -19,6 +19,7 @@ import {
   resolveId,
 } from '../../src/services/meetings.js';
 import {
+  mockConsolidatedPanel,
   mockMeetings,
   mockMeetingWithNotes,
   mockPeople,
@@ -677,6 +678,7 @@ describe('meetings service', () => {
       { source: 'documents', error: new Error('fetch failed') },
     ])('propagates $source errors: $error', async ({ source, error }) => {
       const client = {
+        getDocumentPanels: vi.fn().mockResolvedValue([]),
         getDocumentMetadata:
           source === 'metadata'
             ? vi.fn().mockRejectedValue(error)
@@ -690,6 +692,7 @@ describe('meetings service', () => {
 
     it('returns null for missing notes', async () => {
       vi.mocked(getClient).mockResolvedValue({
+        getDocumentPanels: vi.fn().mockResolvedValue([]),
         getDocumentMetadata: vi.fn().mockRejectedValue(new ApiError('Not found', 404)),
         getDocuments: vi.fn().mockRejectedValue(new ApiError('Not found', 404)),
       } as never);
@@ -800,12 +803,24 @@ describe('meetings service', () => {
   });
 
   describe('getEnhancedNotes', () => {
-    it('should get enhanced notes from metadata', async () => {
-      const meetingWithEnhanced = {
-        ...mockMeetingWithNotes,
-        id: 'meeting-id',
-      };
+    it('should return consolidated panel content when panel exists', async () => {
       const mockClient = {
+        getDocumentPanels: vi.fn().mockResolvedValue([mockConsolidatedPanel]),
+        getDocumentMetadata: vi.fn(),
+        getDocuments: vi.fn(),
+      };
+      vi.mocked(getClient).mockResolvedValue(mockClient as never);
+
+      const result = await getEnhancedNotes('meeting-id');
+
+      expect(result).toEqual(mockConsolidatedPanel.content);
+      expect(mockClient.getDocumentMetadata).not.toHaveBeenCalled();
+    });
+
+    it('should fall back to last_viewed_panel when no consolidated panel', async () => {
+      const meetingWithEnhanced = { ...mockMeetingWithNotes, id: 'meeting-id' };
+      const mockClient = {
+        getDocumentPanels: vi.fn().mockResolvedValue([]),
         getDocumentMetadata: vi.fn().mockResolvedValue(meetingWithEnhanced),
         getDocuments: vi.fn(),
       };
@@ -817,36 +832,9 @@ describe('meetings service', () => {
       expect(mockClient.getDocuments).not.toHaveBeenCalled();
     });
 
-    it('should return null when metadata has no enhanced notes', async () => {
+    it('should return null when neither panels nor last_viewed_panel found', async () => {
       const mockClient = {
-        getDocumentMetadata: vi.fn().mockResolvedValue({ id: 'meeting-id' }),
-        getDocuments: vi.fn(),
-      };
-      vi.mocked(getClient).mockResolvedValue(mockClient as never);
-
-      const result = await getEnhancedNotes('meeting-id');
-
-      expect(result).toBeNull();
-    });
-
-    it('should fallback to document search when metadata unavailable', async () => {
-      const meetingWithEnhanced = {
-        ...mockMeetingWithNotes,
-        id: 'meeting-id',
-      };
-      const mockClient = {
-        getDocumentMetadata: vi.fn().mockResolvedValue(null),
-        getDocuments: vi.fn().mockResolvedValue({ docs: [meetingWithEnhanced] }),
-      };
-      vi.mocked(getClient).mockResolvedValue(mockClient as never);
-
-      const result = await getEnhancedNotes('meeting-id');
-
-      expect(result).toEqual(mockMeetingWithNotes.last_viewed_panel?.content);
-    });
-
-    it('should return null when meeting not found', async () => {
-      const mockClient = {
+        getDocumentPanels: vi.fn().mockResolvedValue([]),
         getDocumentMetadata: vi.fn().mockResolvedValue(null),
         getDocuments: vi.fn().mockResolvedValue({ docs: [] }),
       };
@@ -857,8 +845,52 @@ describe('meetings service', () => {
       expect(result).toBeNull();
     });
 
+    it('should fallback to document search when metadata unavailable', async () => {
+      const meetingWithEnhanced = { ...mockMeetingWithNotes, id: 'meeting-id' };
+      const mockClient = {
+        getDocumentPanels: vi.fn().mockResolvedValue([]),
+        getDocumentMetadata: vi.fn().mockResolvedValue(null),
+        getDocuments: vi.fn().mockResolvedValue({ docs: [meetingWithEnhanced] }),
+      };
+      vi.mocked(getClient).mockResolvedValue(mockClient as never);
+
+      const result = await getEnhancedNotes('meeting-id');
+
+      expect(result).toEqual(mockMeetingWithNotes.last_viewed_panel?.content);
+    });
+
+    it('should fall back to last_viewed_panel when consolidated panel has no content', async () => {
+      const emptyPanel = { ...mockConsolidatedPanel, content: undefined };
+      const meetingWithEnhanced = { ...mockMeetingWithNotes, id: 'meeting-id' };
+      const mockClient = {
+        getDocumentPanels: vi.fn().mockResolvedValue([emptyPanel]),
+        getDocumentMetadata: vi.fn().mockResolvedValue(meetingWithEnhanced),
+        getDocuments: vi.fn(),
+      };
+      vi.mocked(getClient).mockResolvedValue(mockClient as never);
+
+      const result = await getEnhancedNotes('meeting-id');
+
+      expect(result).toEqual(mockMeetingWithNotes.last_viewed_panel?.content);
+    });
+
+    it('should fall back to last_viewed_panel when getDocumentPanels fails', async () => {
+      const meetingWithEnhanced = { ...mockMeetingWithNotes, id: 'meeting-id' };
+      const mockClient = {
+        getDocumentPanels: vi.fn().mockRejectedValue(new Error('panels endpoint unavailable')),
+        getDocumentMetadata: vi.fn().mockResolvedValue(meetingWithEnhanced),
+        getDocuments: vi.fn(),
+      };
+      vi.mocked(getClient).mockResolvedValue(mockClient as never);
+
+      const result = await getEnhancedNotes('meeting-id');
+
+      expect(result).toEqual(mockMeetingWithNotes.last_viewed_panel?.content);
+    });
+
     it('should propagate document search errors', async () => {
       const mockClient = {
+        getDocumentPanels: vi.fn().mockRejectedValue(new Error('panels error')),
         getDocumentMetadata: vi.fn().mockResolvedValue(null),
         getDocuments: vi.fn().mockRejectedValue(new Error('Server error')),
       };
