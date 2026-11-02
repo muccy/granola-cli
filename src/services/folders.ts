@@ -38,8 +38,14 @@ function normalizeFolder(folder: DocumentList): Folder {
 export async function list(opts: ListOptions = {}): Promise<Folder[]> {
   return withTokenRefresh(async () => {
     const client = await getClient();
+    // /v2/get-document-lists truncates documents (see DOCUMENT_LISTS_LIMIT), so it only
+    // enumerates the folders: documents and counts come from one getDocumentList call per
+    // folder, keeping the enumerated entry if the folder disappeared in the meantime.
     const documentLists = await client.getDocumentLists();
-    const folders = documentLists.map(normalizeFolder);
+    const detailed = await Promise.all(
+      documentLists.map(async (list) => (await client.getDocumentList(list.id)) ?? list),
+    );
+    const folders = detailed.map(normalizeFolder);
     debug('list fetched %d folders', folders.length);
 
     if (opts.workspace) {
@@ -56,8 +62,7 @@ export async function get(id: string): Promise<Folder | null> {
   return withTokenRefresh(async () => {
     debug('get called for folder: %s', id);
     const client = await getClient();
-    const documentLists = await client.getDocumentLists();
-    const folder = documentLists.find((f) => f.id === id);
+    const folder = await client.getDocumentList(id);
     if (!folder) {
       debug('folder %s not found', id);
       return null;

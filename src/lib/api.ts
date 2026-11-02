@@ -1,5 +1,5 @@
 import type { DocumentPanel, Meeting, Person, ProseMirrorDoc } from '../types.js';
-import type { HttpClient } from './http.js';
+import { ApiError, type HttpClient } from './http.js';
 
 export interface GetDocumentsOptions {
   workspace_id?: string;
@@ -91,10 +91,13 @@ export interface WorkspacesResponse {
 
 /**
  * `limit` required by /v2/get-document-lists: without it (or with 0) the server answers
- * HTTP 500. The server also enforces an upper bound on the value and has lowered it
- * without notice in the past; do not raise this without re-testing the endpoint.
+ * HTTP 500. It does not count folders but documents, summed across all folders: every
+ * folder is always returned, with at most `limit` documents in total, and the server caps
+ * the value and has lowered that cap without notice. So /v2 is used only to enumerate the
+ * folders; a folder's documents come from /v1/get-document-list (`getDocumentList`),
+ * which does not truncate.
  */
-export const DOCUMENT_LISTS_LIMIT = 50;
+export const DOCUMENT_LISTS_LIMIT = 1;
 
 export interface GranolaApi {
   getDocuments(options?: GetDocumentsOptions): Promise<DocumentsResponse>;
@@ -157,8 +160,12 @@ export function createApiClient(httpClient: HttpClient): GranolaApi {
   }
 
   async function getDocumentList(folderId: string): Promise<DocumentList | null> {
-    const folders = await getDocumentLists();
-    return folders.find((f) => f.id === folderId) || null;
+    try {
+      return await httpClient.post<DocumentList>('/v1/get-document-list', { list_id: folderId });
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 404) return null;
+      throw error;
+    }
   }
 
   async function getWorkspaces(): Promise<WorkspacesResponse> {

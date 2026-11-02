@@ -18,6 +18,7 @@ describe('folders service', () => {
     it('should fetch folders from getDocumentLists and filter by workspace', async () => {
       const mockClient = {
         getDocumentLists: vi.fn().mockResolvedValue(mockDocumentListsApiResponse),
+        getDocumentList: vi.fn().mockResolvedValue(null),
       };
       vi.mocked(getClient).mockResolvedValue(mockClient as never);
 
@@ -37,6 +38,7 @@ describe('folders service', () => {
     it('should return all folders when no workspace filter', async () => {
       const mockClient = {
         getDocumentLists: vi.fn().mockResolvedValue(mockDocumentListsApiResponse),
+        getDocumentList: vi.fn().mockResolvedValue(null),
       };
       vi.mocked(getClient).mockResolvedValue(mockClient as never);
 
@@ -48,6 +50,7 @@ describe('folders service', () => {
     it('should return empty array when no folders', async () => {
       const mockClient = {
         getDocumentLists: vi.fn().mockResolvedValue([]),
+        getDocumentList: vi.fn().mockResolvedValue(null),
       };
       vi.mocked(getClient).mockResolvedValue(mockClient as never);
 
@@ -70,6 +73,7 @@ describe('folders service', () => {
       ];
       const mockClient = {
         getDocumentLists: vi.fn().mockResolvedValue(foldersWithDocs),
+        getDocumentList: vi.fn().mockResolvedValue(null),
       };
       vi.mocked(getClient).mockResolvedValue(mockClient as never);
 
@@ -93,6 +97,7 @@ describe('folders service', () => {
       ];
       const mockClient = {
         getDocumentLists: vi.fn().mockResolvedValue(foldersWithBoth),
+        getDocumentList: vi.fn().mockResolvedValue(null),
       };
       vi.mocked(getClient).mockResolvedValue(mockClient as never);
 
@@ -112,6 +117,7 @@ describe('folders service', () => {
       ];
       const mockClient = {
         getDocumentLists: vi.fn().mockResolvedValue(folders),
+        getDocumentList: vi.fn().mockResolvedValue(null),
       };
       vi.mocked(getClient).mockResolvedValue(mockClient as never);
 
@@ -132,6 +138,7 @@ describe('folders service', () => {
       ];
       const mockClient = {
         getDocumentLists: vi.fn().mockResolvedValue(folders),
+        getDocumentList: vi.fn().mockResolvedValue(null),
       };
       vi.mocked(getClient).mockResolvedValue(mockClient as never);
 
@@ -139,17 +146,49 @@ describe('folders service', () => {
 
       expect(result[0].document_count).toBe(0);
     });
+
+    // /v2/get-document-lists truncates documents to `limit` in total, so documents and
+    // count must come from the per-folder detail.
+    it('should take documents and count from getDocumentList, not the truncated enumeration', async () => {
+      const truncated = [
+        {
+          id: 'folder-1',
+          title: 'Team Sync',
+          created_at: '',
+          document_count: 1,
+          documents: [{ id: 'doc-1' }],
+        },
+      ];
+      const detail = {
+        id: 'folder-1',
+        title: 'Team Sync',
+        created_at: '',
+        documents: [{ id: 'doc-1' }, { id: 'doc-2' }, { id: 'doc-3' }],
+      };
+      const mockClient = {
+        getDocumentLists: vi.fn().mockResolvedValue(truncated),
+        getDocumentList: vi.fn().mockResolvedValue(detail),
+      };
+      vi.mocked(getClient).mockResolvedValue(mockClient as never);
+
+      const result = await list();
+
+      expect(mockClient.getDocumentList).toHaveBeenCalledWith('folder-1');
+      expect(result[0].document_ids).toEqual(['doc-1', 'doc-2', 'doc-3']);
+      expect(result[0].document_count).toBe(3);
+    });
   });
 
   describe('get', () => {
     it('should return folder by id when found', async () => {
       const mockClient = {
-        getDocumentLists: vi.fn().mockResolvedValue(mockDocumentListsApiResponse),
+        getDocumentList: vi.fn().mockResolvedValue(mockDocumentListsApiResponse[0]),
       };
       vi.mocked(getClient).mockResolvedValue(mockClient as never);
 
       const result = await get('folder-1');
 
+      expect(mockClient.getDocumentList).toHaveBeenCalledWith('folder-1');
       expect(result).toMatchObject({
         id: 'folder-1',
         title: 'Sales Calls',
@@ -159,7 +198,7 @@ describe('folders service', () => {
 
     it('should return null when folder not found', async () => {
       const mockClient = {
-        getDocumentLists: vi.fn().mockResolvedValue(mockDocumentListsApiResponse),
+        getDocumentList: vi.fn().mockResolvedValue(null),
       };
       vi.mocked(getClient).mockResolvedValue(mockClient as never);
 
@@ -168,9 +207,9 @@ describe('folders service', () => {
       expect(result).toBeNull();
     });
 
-    it('should propagate errors from getDocumentLists', async () => {
+    it('should propagate errors from getDocumentList', async () => {
       const mockClient = {
-        getDocumentLists: vi.fn().mockRejectedValue(new Error('API error')),
+        getDocumentList: vi.fn().mockRejectedValue(new Error('API error')),
       };
       vi.mocked(getClient).mockResolvedValue(mockClient as never);
 
