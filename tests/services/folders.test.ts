@@ -137,6 +137,67 @@ describe('folders service', () => {
         is_favourite: true,
       });
     });
+
+    it('should count the folder documents when document_count is missing', async () => {
+      const folders = [
+        {
+          id: 'folder-1',
+          title: 'Team Sync',
+          created_at: '',
+          documents: [{ id: 'doc-1' }, { id: 'doc-2' }, { id: 'doc-3' }],
+        },
+      ];
+      const mockClient = {
+        getDocumentLists: vi.fn().mockResolvedValue(folders),
+      };
+      vi.mocked(getClient).mockResolvedValue(mockClient as never);
+
+      const result = await list();
+
+      expect(result[0].document_count).toBe(3);
+    });
+
+    it('should keep the server document_count when present, even 0', async () => {
+      const folders = [
+        {
+          id: 'folder-1',
+          title: 'Team Sync',
+          created_at: '',
+          document_count: 0,
+          documents: [{ id: 'doc-1' }],
+        },
+      ];
+      const mockClient = {
+        getDocumentLists: vi.fn().mockResolvedValue(folders),
+      };
+      vi.mocked(getClient).mockResolvedValue(mockClient as never);
+
+      const result = await list();
+
+      expect(result[0].document_count).toBe(0);
+    });
+
+    it('should count the folder document_ids when document_count is missing', async () => {
+      vi.mocked(getClient).mockResolvedValue({
+        getDocumentLists: vi
+          .fn()
+          .mockResolvedValue([
+            { id: 'folder-1', created_at: '', document_ids: ['doc-1', 'doc-2'] },
+          ]),
+      } as never);
+
+      expect((await list())[0].document_count).toBe(2);
+    });
+
+    it('should count 0 for an empty folder without document_count', async () => {
+      vi.mocked(getClient).mockResolvedValue({
+        getDocumentLists: vi
+          .fn()
+          .mockResolvedValue([{ id: 'folder-1', created_at: '', document_ids: [] }]),
+      } as never);
+
+      expect((await list())[0].document_count).toBe(0);
+    });
   });
 
   describe('get', () => {
