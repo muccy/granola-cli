@@ -1,5 +1,5 @@
 import type { DocumentPanel, Meeting, Person, ProseMirrorDoc } from '../types.js';
-import type { HttpClient } from './http.js';
+import { ApiError, type HttpClient } from './http.js';
 
 export interface GetDocumentsOptions {
   workspace_id?: string;
@@ -154,8 +154,12 @@ export function createApiClient(httpClient: HttpClient): GranolaApi {
   }
 
   async function getDocumentList(folderId: string): Promise<DocumentList | null> {
-    const folders = await getDocumentLists();
-    return folders.find((f) => f.id === folderId) || null;
+    try {
+      return await httpClient.post<DocumentList>('/v1/get-document-list', { list_id: folderId });
+    } catch (error) {
+      if (error instanceof ApiError && error.status === 404) return null;
+      throw error;
+    }
   }
 
   async function getWorkspaces(): Promise<WorkspacesResponse> {
