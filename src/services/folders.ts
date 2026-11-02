@@ -17,9 +17,9 @@ function normalizeFolder(folder: DocumentList): Folder {
     : undefined;
 
   const documentIds =
-    Array.isArray(folder.document_ids) && folder.document_ids.length > 0
+    (Array.isArray(folder.document_ids) && folder.document_ids.length > 0
       ? folder.document_ids
-      : documentIdsFromDocs;
+      : documentIdsFromDocs) ?? [];
 
   return {
     id: folder.id,
@@ -29,8 +29,8 @@ function normalizeFolder(folder: DocumentList): Folder {
     workspace_id: folder.workspace_id,
     workspace_name: folder.workspace_display_name,
     owner_id: folder.owner_id,
-    document_count: folder.document_count,
-    document_ids: documentIds ?? [],
+    document_count: folder.document_count ?? documentIds.length,
+    document_ids: documentIds,
     is_favourite: folder.is_favourited ?? folder.is_favourite ?? false,
   };
 }
