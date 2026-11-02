@@ -6,6 +6,7 @@ import { captureConsole, mockProcessExit } from '../../setup.js';
 
 vi.mock('../../../src/services/meetings.js', () => ({
   list: vi.fn(),
+  getLastFolderSkipped: vi.fn(() => []),
 }));
 
 vi.mock('../../../src/lib/config.js', () => ({
@@ -143,6 +144,52 @@ describe('meeting list command', () => {
     expect(jsonOutput).toBeDefined();
     const parsed = JSON.parse(jsonOutput!);
     expect(parsed).toHaveLength(3);
+  });
+
+  it('should output wrapper JSON when --output json --folder and skipped ids exist', async () => {
+    vi.mocked(meetings.list).mockResolvedValue(mockMeetings);
+    vi.mocked(meetings.getLastFolderSkipped).mockReturnValue(['poison']);
+
+    const program = new Command();
+    program.addCommand(createListCommand());
+    await program.parseAsync(['node', 'test', 'list', '--output', 'json', '--folder', 'folder123']);
+
+    const jsonOutput = console_.logs.find((log) => {
+      try {
+        JSON.parse(log);
+        return true;
+      } catch {
+        return false;
+      }
+    });
+    expect(jsonOutput).toBeDefined();
+    const parsed = JSON.parse(jsonOutput!);
+    expect(parsed).toHaveProperty('meetings');
+    expect(parsed.meetings).toHaveLength(3);
+    expect(parsed.skipped_count).toBe(1);
+    expect(parsed.skipped_ids).toEqual(['poison']);
+  });
+
+  it('should output plain JSON array when --output json --folder and no skipped ids', async () => {
+    vi.mocked(meetings.list).mockResolvedValue(mockMeetings);
+    vi.mocked(meetings.getLastFolderSkipped).mockReturnValue([]);
+
+    const program = new Command();
+    program.addCommand(createListCommand());
+    await program.parseAsync(['node', 'test', 'list', '--output', 'json', '--folder', 'folder123']);
+
+    const jsonOutput = console_.logs.find((log) => {
+      try {
+        JSON.parse(log);
+        return true;
+      } catch {
+        return false;
+      }
+    });
+    expect(jsonOutput).toBeDefined();
+    const parsed = JSON.parse(jsonOutput!);
+    expect(Array.isArray(parsed)).toBe(true);
+    expect(parsed).not.toHaveProperty('skipped_count');
   });
 
   it('should show message when no meetings found', async () => {

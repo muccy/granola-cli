@@ -79,6 +79,8 @@ export function createListCommand() {
       });
       debug('fetched %d meetings', data.length);
 
+      const skipped = opts.folder ? meetings.getLastFolderSkipped() : [];
+
       // Handle structured output formats
       const format = opts.output || null;
       debug('output format: %s', format || 'table');
@@ -87,7 +89,16 @@ export function createListCommand() {
           console.error(chalk.red(`Invalid format: ${format}. Use 'json', 'yaml', or 'toon'.`));
           process.exit(1);
         }
-        console.log(formatOutput(data, format as OutputFormat));
+        if (format === 'json' && opts.folder && skipped.length > 0) {
+          const output = {
+            meetings: data,
+            skipped_count: skipped.length,
+            skipped_ids: Array.from(skipped),
+          };
+          console.log(JSON.stringify(output, null, 2));
+        } else {
+          console.log(formatOutput(data, format as OutputFormat));
+        }
         return;
       }
 
