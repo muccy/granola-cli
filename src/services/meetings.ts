@@ -32,21 +32,62 @@ const DOCUMENT_BATCH_SIZE = 25;
 const NOTES_PAGE_SIZE = 50;
 const MAX_NOTES_PAGES = 100;
 
-async function fetchMeetingsByIds(client: GranolaApi, documentIds: string[]): Promise<Meeting[]> {
-  if (documentIds.length === 0) return [];
+let _lastFolderSkipped: string[] = [];
+
+/**
+ * Document ids skipped by the last folder listing: the ones that could not be fetched
+ * even one by one after their batch answered HTTP 400. Every list() call resets it.
+ */
+export function getLastFolderSkipped(): readonly string[] {
+  return _lastFolderSkipped;
+}
+
+async function fetchMeetingsByIds(
+  client: GranolaApi,
+  documentIds: string[],
+): Promise<{ meetings: Meeting[]; skipped: string[] }> {
+  if (documentIds.length === 0) return { meetings: [], skipped: [] };
 
   const meetings: Meeting[] = [];
+  const skipped: string[] = [];
+
   for (let i = 0; i < documentIds.length; i += DOCUMENT_BATCH_SIZE) {
     const chunk = documentIds.slice(i, i + DOCUMENT_BATCH_SIZE);
-    const res = await client.getDocumentsBatch({
-      document_ids: chunk,
-      include_last_viewed_panel: false,
-    });
-    const docs = (res?.documents || res?.docs || []) as Meeting[];
-    meetings.push(...docs);
+    try {
+      const res = await client.getDocumentsBatch({
+        document_ids: chunk,
+        include_last_viewed_panel: false,
+      });
+      const docs = (res?.documents || res?.docs || []) as Meeting[];
+      meetings.push(...docs);
+    } catch (err) {
+      if (err instanceof ApiError && err.status === 400) {
+        debug('batch answered HTTP 400, fetching its %d ids one by one', chunk.length);
+        for (const id of chunk) {
+          try {
+            const metadata = await client.getDocumentMetadata(id);
+            // The return type of getDocumentMetadata is non-nullable (Promise<DocumentMetadata>),
+            // but this is a runtime defence: for unreadable ids the API may return an empty/null
+            // body even though TypeScript does not model that possibility.
+            if (metadata) {
+              meetings.push({ id, ...metadata } as Meeting);
+            } else {
+              debug('skipped id %s: getDocumentMetadata returned null', id);
+              skipped.push(id);
+            }
+          } catch (idErr) {
+            debug('skipped id %s: per-id fetch failed: %O', id, idErr);
+            skipped.push(id);
+          }
+        }
+      } else {
+        throw err;
+      }
+    }
   }
-  debug('fetched %d meetings via getDocumentsBatch', meetings.length);
-  return meetings;
+
+  debug('fetched %d meetings, %d skipped', meetings.length, skipped.length);
+  return { meetings, skipped };
 }
 
 async function loadMeetingMetadata(
@@ -67,11 +108,14 @@ async function loadMeetingMetadata(
   }
 }
 
-async function fetchFolderMeetings(client: GranolaApi, folderId: string): Promise<Meeting[]> {
+async function fetchFolderMeetings(
+  client: GranolaApi,
+  folderId: string,
+): Promise<{ meetings: Meeting[]; skipped: string[] }> {
   const ids = await getFolderDocumentIds(client, folderId);
   if (ids.length === 0) {
     debug('folder %s has no documents', folderId);
-    return [];
+    return { meetings: [], skipped: [] };
   }
   return fetchMeetingsByIds(client, ids);
 }
@@ -79,13 +123,26 @@ async function fetchFolderMeetings(client: GranolaApi, folderId: string): Promis
 export async function list(opts: ListOptions = {}): Promise<Meeting[]> {
   return withTokenRefresh(async () => {
     debug('list called with opts: %O', opts);
+    _lastFolderSkipped = [];
     const client = await getClient();
     const { limit = 20, offset = 0, workspace, folder, ...filterOpts } = opts;
 
     if (folder) {
       debug('listing meetings for folder: %s', folder);
-      const folderMeetings = await fetchFolderMeetings(client, folder);
-      debug('fetched %d meetings for folder %s', folderMeetings.length, folder);
+      const { meetings: folderMeetings, skipped: folderSkipped } = await fetchFolderMeetings(
+        client,
+        folder,
+      );
+      _lastFolderSkipped = folderSkipped;
+      debug(
+        'fetched %d meetings for folder %s (%d skipped)',
+        folderMeetings.length,
+        folder,
+        folderSkipped.length,
+      );
+      if (folderSkipped.length > 0) {
+        debug('folder %s: %d ids skipped', folder, folderSkipped.length);
+      }
 
       let filtered = folderMeetings;
       if (workspace) {
@@ -244,7 +301,9 @@ export async function get(id: string): Promise<Meeting | null> {
   return withTokenRefresh(async () => {
     debug('getting meeting: %s', id);
     const client = await getClient();
-    const meeting = (await fetchMeetingsByIds(client, [id])).find((item) => item.id === id);
+    const meeting = (await fetchMeetingsByIds(client, [id])).meetings.find(
+      (item) => item.id === id,
+    );
     if (!meeting) {
       debug('meeting %s: not found', id);
       return null;
