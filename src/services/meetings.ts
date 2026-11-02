@@ -26,7 +26,9 @@ async function getFolderDocumentIds(client: GranolaApi, folderId: string): Promi
   return ids;
 }
 
-const DOCUMENT_BATCH_SIZE = 100;
+// /v1/get-documents-batch accepts at most 50 ids per request (51 → HTTP 400). 25 leaves
+// headroom should the server lower that cap; it at most doubles the requests for large folders.
+const DOCUMENT_BATCH_SIZE = 25;
 const NOTES_PAGE_SIZE = 50;
 const MAX_NOTES_PAGES = 100;
 

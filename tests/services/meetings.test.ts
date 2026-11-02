@@ -434,6 +434,39 @@ describe('meetings service', () => {
       expect(result).toEqual([]);
       expect(mockClient.getDocumentsBatch).not.toHaveBeenCalled();
     });
+
+    it('should chunk getDocumentsBatch in batches of at most 25 ids for large folders', async () => {
+      // /v1/get-documents-batch rejects requests with more than 50 ids: a folder with
+      // more than 25 documents must be split into several batches without losing any.
+      const ids = Array.from({ length: 60 }, (_, i) => `doc-${i}`);
+      const folderMeetings = ids.map((id, i) => ({
+        id,
+        title: `Folder Meeting ${i}`,
+        created_at: '2024-01-01',
+        updated_at: '2024-01-01',
+        workspace_id: 'ws-1',
+      }));
+      const meetingLookup = new Map(folderMeetings.map((m) => [m.id, m]));
+      const mockClient = {
+        getDocumentList: vi.fn().mockResolvedValue({ document_ids: ids }),
+        getDocumentsBatch: vi.fn().mockImplementation(async ({ document_ids }) => ({
+          documents: document_ids.map((id: string) => meetingLookup.get(id)),
+        })),
+      };
+      vi.mocked(getClient).mockResolvedValue(mockClient as never);
+
+      // A limit above 60 keeps list() pagination from hiding a lost document.
+      const result = await list({ folder: 'big-folder', limit: 100 });
+
+      const calls = mockClient.getDocumentsBatch.mock.calls;
+      expect(calls.length).toBeGreaterThan(1);
+      for (const [arg] of calls) {
+        expect(arg.document_ids.length).toBeLessThanOrEqual(25);
+      }
+      const batchedIds = calls.flatMap(([arg]) => arg.document_ids);
+      expect(batchedIds.sort()).toEqual([...ids].sort());
+      expect(result).toHaveLength(60);
+    });
   });
 
   describe('get', () => {
