@@ -12,6 +12,7 @@ import {
   clearMeetingsCache,
   get,
   getEnhancedNotes,
+  getLastFolderSkipped,
   getNotes,
   getTranscript,
   list,
@@ -881,6 +882,115 @@ describe('meetings service', () => {
       vi.mocked(getClient).mockRejectedValue(new Error('Not authenticated'));
 
       await expect(list()).rejects.toThrow(/authenticated/i);
+    });
+  });
+
+  describe('fetchMeetingsByIds fallback (HTTP 400)', () => {
+    beforeEach(() => {
+      clearMeetingsCache();
+    });
+
+    it('should not fall back to per-id fetches when the batch succeeds', async () => {
+      const doc1 = {
+        id: 'doc1',
+        title: 'Doc 1',
+        created_at: '2024-01-01',
+        updated_at: '2024-01-01',
+      };
+      const doc2 = {
+        id: 'doc2',
+        title: 'Doc 2',
+        created_at: '2024-01-02',
+        updated_at: '2024-01-02',
+      };
+      const meetingLookup = new Map([
+        ['doc1', doc1],
+        ['doc2', doc2],
+      ]);
+      const mockClient = {
+        getDocumentList: vi.fn().mockResolvedValue({
+          document_ids: ['doc1', 'doc2'],
+        }),
+        getDocumentsBatch: vi.fn().mockImplementation(async ({ document_ids }) => ({
+          documents: document_ids.map((id: string) => meetingLookup.get(id)),
+        })),
+        getDocumentMetadata: vi.fn(),
+      };
+      vi.mocked(getClient).mockResolvedValue(mockClient as never);
+
+      const result = await list({ folder: 'f-id', limit: 100 });
+
+      expect(result).toHaveLength(2);
+      expect(result.map((m) => m.id)).toEqual(['doc1', 'doc2']);
+      expect(mockClient.getDocumentMetadata).not.toHaveBeenCalled();
+      expect(getLastFolderSkipped()).toHaveLength(0);
+    });
+
+    it('should recover the readable documents one by one and report the rest as skipped when a batch answers HTTP 400', async () => {
+      const mockClient = {
+        getDocumentList: vi.fn().mockResolvedValue({
+          document_ids: ['good1', 'good2', 'unreadable'],
+        }),
+        getDocumentsBatch: vi.fn().mockRejectedValue(new ApiError('HTTP 400: Bad Request', 400)),
+        getDocumentMetadata: vi.fn().mockImplementation(async (id: string) => {
+          if (id === 'good1')
+            return { title: 'Good 1', created_at: '2024-01-01', updated_at: '2024-01-01' };
+          if (id === 'good2')
+            return { title: 'Good 2', created_at: '2024-01-02', updated_at: '2024-01-02' };
+          throw new Error('Document not found');
+        }),
+      };
+      vi.mocked(getClient).mockResolvedValue(mockClient as never);
+
+      const result = await list({ folder: 'f-id', limit: 100 });
+
+      const ids = result.map((m) => m.id);
+      expect(ids).toContain('good1');
+      expect(ids).toContain('good2');
+      expect(ids).not.toContain('unreadable');
+
+      const skipped = getLastFolderSkipped();
+      expect(skipped).toContain('unreadable');
+      expect(skipped).not.toContain('good1');
+      expect(skipped).not.toContain('good2');
+    });
+
+    it('should rethrow a 5xx batch error without per-id fallback', async () => {
+      const mockClient = {
+        getDocumentList: vi.fn().mockResolvedValue({
+          document_ids: ['doc1', 'doc2'],
+        }),
+        getDocumentsBatch: vi
+          .fn()
+          .mockRejectedValue(new ApiError('HTTP 500: Internal Server Error', 500)),
+        getDocumentMetadata: vi.fn(),
+      };
+      vi.mocked(getClient).mockResolvedValue(mockClient as never);
+
+      await expect(list({ folder: 'f-id', limit: 100 })).rejects.toThrow();
+      expect(mockClient.getDocumentMetadata).not.toHaveBeenCalled();
+    });
+
+    it('should report no skipped ids when the per-id fallback recovers every document', async () => {
+      const doc1 = { title: 'Doc 1', created_at: '2024-01-01', updated_at: '2024-01-01' };
+      const mockClient = {
+        getDocumentList: vi.fn().mockResolvedValue({
+          document_ids: ['doc1'],
+        }),
+        getDocumentsBatch: vi.fn().mockRejectedValue(new ApiError('HTTP 400: Bad Request', 400)),
+        getDocumentMetadata: vi.fn().mockImplementation(async (id: string) => {
+          if (id === 'doc1') return doc1;
+          throw new Error('Not found');
+        }),
+      };
+      vi.mocked(getClient).mockResolvedValue(mockClient as never);
+
+      const result = await list({ folder: 'f-id', limit: 100 });
+
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toBe('doc1');
+      const skipped = getLastFolderSkipped();
+      expect(Array.from(skipped)).toHaveLength(0);
     });
   });
 });
