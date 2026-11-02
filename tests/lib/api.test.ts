@@ -1,7 +1,7 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 // We'll import from the module we're about to create
 import { createApiClient, type GranolaApi } from '../../src/lib/api.js';
-import type { HttpClient } from '../../src/lib/http.js';
+import { ApiError, type HttpClient } from '../../src/lib/http.js';
 
 describe('api client', () => {
   let mockHttpClient: HttpClient;
@@ -234,39 +234,29 @@ describe('api client', () => {
   });
 
   describe('getDocumentList', () => {
-    it('should fetch folders and find the matching one', async () => {
-      const mockFolders = {
-        'folder-1': { id: 'folder-1', title: 'Sales', document_ids: ['doc-1'] },
-        'folder-2': { id: 'folder-2', title: 'Support', document_ids: ['doc-2'] },
-      };
-      vi.mocked(mockHttpClient.post).mockResolvedValue({ lists: mockFolders });
+    it('should call POST /v1/get-document-list with list_id and return the folder', async () => {
+      const folder = { id: 'folder-2', title: 'Support', documents: [{ id: 'doc-2' }] };
+      vi.mocked(mockHttpClient.post).mockResolvedValue(folder);
 
       const result = await api.getDocumentList('folder-2');
 
-      expect(mockHttpClient.post).toHaveBeenCalledWith('/v1/get-document-lists-metadata', {
-        include_document_ids: true,
-        include_only_joined_lists: false,
+      expect(mockHttpClient.post).toHaveBeenCalledWith('/v1/get-document-list', {
+        list_id: 'folder-2',
       });
-      expect(result).toEqual({ id: 'folder-2', title: 'Support', document_ids: ['doc-2'] });
+      expect(result).toEqual(folder);
     });
 
-    it('should return null when folder is not found', async () => {
-      const mockFolders = {
-        'folder-1': { id: 'folder-1', title: 'Sales', document_ids: ['doc-1'] },
-      };
-      vi.mocked(mockHttpClient.post).mockResolvedValue({ lists: mockFolders });
+    it('should return null when the folder does not exist (HTTP 404)', async () => {
+      vi.mocked(mockHttpClient.post).mockRejectedValue(new ApiError('HTTP 404: Not Found', 404));
 
-      const result = await api.getDocumentList('nonexistent');
-
-      expect(result).toBeNull();
+      expect(await api.getDocumentList('nonexistent')).toBeNull();
     });
 
-    it('should return null when folders array is empty', async () => {
-      vi.mocked(mockHttpClient.post).mockResolvedValue({ lists: {} });
+    it('should rethrow other errors', async () => {
+      const error = new ApiError('HTTP 500: Internal Server Error', 500);
+      vi.mocked(mockHttpClient.post).mockRejectedValue(error);
 
-      const result = await api.getDocumentList('folder-1');
-
-      expect(result).toBeNull();
+      await expect(api.getDocumentList('folder-1')).rejects.toBe(error);
     });
   });
 

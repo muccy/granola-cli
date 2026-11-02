@@ -1,4 +1,4 @@
-import type { DocumentList } from '../lib/api.js';
+import type { DocumentList, GranolaApi } from '../lib/api.js';
 import { createGranolaDebug } from '../lib/debug.js';
 import type { Folder } from '../types.js';
 import { getClient, withTokenRefresh } from './client.js';
@@ -35,11 +35,28 @@ function normalizeFolder(folder: DocumentList): Folder {
   };
 }
 
+/**
+ * The lists metadata endpoint keeps the ids of deleted documents in `document_ids`, while
+ * /v1/get-document-list returns only the live ones. Keep the metadata fields (name, workspace)
+ * and take the documents from the folder itself; keep the metadata entry if the folder is gone.
+ */
+async function withFolderDocuments(client: GranolaApi, entry: DocumentList): Promise<DocumentList> {
+  const folder = await client.getDocumentList(entry.id);
+  if (!folder) {
+    debug('folder %s not returned by getDocumentList, keeping metadata entry', entry.id);
+    return entry;
+  }
+  return { ...entry, ...folder, document_ids: folder.document_ids };
+}
+
 export async function list(opts: ListOptions = {}): Promise<Folder[]> {
   return withTokenRefresh(async () => {
     const client = await getClient();
     const documentLists = await client.getDocumentLists();
-    const folders = documentLists.map(normalizeFolder);
+    const detailed = await Promise.all(
+      documentLists.map((entry) => withFolderDocuments(client, entry)),
+    );
+    const folders = detailed.map(normalizeFolder);
     debug('list fetched %d folders', folders.length);
 
     if (opts.workspace) {
@@ -63,6 +80,6 @@ export async function get(id: string): Promise<Folder | null> {
       return null;
     }
     debug('folder %s found', id);
-    return normalizeFolder(folder);
+    return normalizeFolder(await withFolderDocuments(client, folder));
   });
 }
