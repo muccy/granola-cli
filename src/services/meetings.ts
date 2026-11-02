@@ -387,13 +387,28 @@ export async function getNotes(id: string): Promise<ProseMirrorDoc | null> {
   });
 }
 
+const CONSOLIDATED_PANEL_SLUG = 'meeting-summary-consolidated';
+
 export async function getEnhancedNotes(id: string): Promise<ProseMirrorDoc | null> {
   return withTokenRefresh(async () => {
     debug('getEnhancedNotes called with id: %s', id);
     const client = await getClient();
+
+    try {
+      const panels = await client.getDocumentPanels(id);
+      const consolidated = panels.find((p) => p.template_slug === CONSOLIDATED_PANEL_SLUG);
+      if (consolidated?.content) {
+        debug('getEnhancedNotes resolved via consolidated panel');
+        return consolidated.content;
+      }
+      debug('getEnhancedNotes: no consolidated panel, falling back to last_viewed_panel');
+    } catch (err) {
+      debug('getDocumentPanels failed for %s, falling back: %O', id, err);
+    }
+
     const metadata = await loadMeetingMetadata(client, id);
     if (metadata && 'last_viewed_panel' in metadata) {
-      debug('getEnhancedNotes resolved via metadata response');
+      debug('getEnhancedNotes resolved via metadata last_viewed_panel');
       return metadata.last_viewed_panel?.content || null;
     }
 
