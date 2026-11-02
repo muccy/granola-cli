@@ -1,6 +1,6 @@
 import { beforeEach, describe, expect, it, vi } from 'vitest';
 // We'll import from the module we're about to create
-import { createApiClient, type GranolaApi } from '../../src/lib/api.js';
+import { createApiClient, DOCUMENT_LISTS_LIMIT, type GranolaApi } from '../../src/lib/api.js';
 import type { HttpClient } from '../../src/lib/http.js';
 
 describe('api client', () => {
@@ -185,12 +185,24 @@ describe('api client', () => {
   });
 
   describe('getDocumentLists', () => {
-    it('should call POST /v2/get-document-lists', async () => {
+    it('should call POST /v2/get-document-lists with a limit', async () => {
       vi.mocked(mockHttpClient.post).mockResolvedValue({ lists: [] });
 
       await api.getDocumentLists();
 
-      expect(mockHttpClient.post).toHaveBeenCalledWith('/v2/get-document-lists', {});
+      expect(mockHttpClient.post).toHaveBeenCalledWith('/v2/get-document-lists', {
+        limit: DOCUMENT_LISTS_LIMIT,
+      });
+    });
+
+    // The server answers HTTP 500 to a body without `limit` or with `limit: 0`.
+    it('should never send a falsy limit (the API 500s on one)', async () => {
+      vi.mocked(mockHttpClient.post).mockResolvedValue({ lists: [] });
+
+      await api.getDocumentLists();
+
+      const [, body] = vi.mocked(mockHttpClient.post).mock.calls[0] as [string, { limit?: number }];
+      expect(body.limit).toBeTruthy();
     });
 
     it('should return the folders array', async () => {
@@ -220,7 +232,9 @@ describe('api client', () => {
 
       const result = await api.getDocumentList('folder-2');
 
-      expect(mockHttpClient.post).toHaveBeenCalledWith('/v2/get-document-lists', {});
+      expect(mockHttpClient.post).toHaveBeenCalledWith('/v2/get-document-lists', {
+        limit: DOCUMENT_LISTS_LIMIT,
+      });
       expect(result).toEqual({ id: 'folder-2', title: 'Support', document_ids: ['doc-2'] });
     });
 

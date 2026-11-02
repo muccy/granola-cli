@@ -89,6 +89,13 @@ export interface WorkspacesResponse {
   workspaces: WorkspaceEntry[];
 }
 
+/**
+ * `limit` required by /v2/get-document-lists: without it (or with 0) the server answers
+ * HTTP 500. The server also enforces an upper bound on the value and has lowered it
+ * without notice in the past; do not raise this without re-testing the endpoint.
+ */
+export const DOCUMENT_LISTS_LIMIT = 50;
+
 export interface GranolaApi {
   getDocuments(options?: GetDocumentsOptions): Promise<DocumentsResponse>;
   getDocumentsBatch(options: GetDocumentsBatchOptions): Promise<DocumentsBatchResponse>;
@@ -136,7 +143,9 @@ export function createApiClient(httpClient: HttpClient): GranolaApi {
   }
 
   async function getDocumentLists(): Promise<DocumentList[]> {
-    const raw = await httpClient.post<DocumentListsResponse>('/v2/get-document-lists', {});
+    const raw = await httpClient.post<DocumentListsResponse>('/v2/get-document-lists', {
+      limit: DOCUMENT_LISTS_LIMIT,
+    });
     return raw.lists ?? [];
   }
 
