@@ -9,9 +9,12 @@ vi.mock('cross-keychain', () => ({
 }));
 
 // Mock node:os for platform-specific path tests
+// release() is used by getRefreshClientHeaders() (User-Agent): without it,
+// refreshAccessToken throws before fetch and returns null.
 vi.mock('node:os', () => ({
   homedir: vi.fn(() => '/home/testuser'),
   platform: vi.fn(() => 'linux'),
+  release: vi.fn(() => '23.0.0'),
 }));
 
 // Mock node:fs/promises for file-based credential tests
@@ -435,14 +438,13 @@ describe('auth', () => {
 
       const result = await refreshAccessToken();
 
+      // Refresh goes to api.granola.ai with only the refresh_token in the body
+      // (client headers vary by platform/version, so they are not asserted exactly).
       expect(mockFetch).toHaveBeenCalledWith(
-        'https://api.workos.com/user_management/authenticate',
+        'https://api.granola.ai/v1/refresh-access-token',
         expect.objectContaining({
           method: 'POST',
-          headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({
-            client_id: 'test-client-id',
-            grant_type: 'refresh_token',
             refresh_token: 'old-refresh-token',
           }),
         }),
@@ -487,17 +489,35 @@ describe('auth', () => {
       expect(mockFetch).not.toHaveBeenCalled();
     });
 
-    it('should return null when missing clientId', async () => {
+    it('should still refresh when clientId is missing (not required by the endpoint)', async () => {
+      // The api.granola.ai refresh only needs the refresh_token: a missing clientId no
+      // longer blocks the refresh (unlike the former WorkOS endpoint).
       const storedCreds = JSON.stringify({
         refreshToken: 'old-refresh-token',
         accessToken: 'old-access-token',
       });
       vi.mocked(crossKeychain.getPassword).mockResolvedValue(storedCreds);
+      vi.mocked(crossKeychain.setPassword).mockResolvedValue(undefined);
+
+      mockFetch.mockResolvedValue({
+        ok: true,
+        json: () =>
+          Promise.resolve({
+            access_token: 'new-access-token',
+            refresh_token: 'new-refresh-token',
+          }),
+      });
 
       const result = await refreshAccessToken();
 
-      expect(result).toBeNull();
-      expect(mockFetch).not.toHaveBeenCalled();
+      expect(mockFetch).toHaveBeenCalledWith(
+        'https://api.granola.ai/v1/refresh-access-token',
+        expect.objectContaining({
+          method: 'POST',
+          body: JSON.stringify({ refresh_token: 'old-refresh-token' }),
+        }),
+      );
+      expect(result?.accessToken).toBe('new-access-token');
     });
 
     it('should return null when WorkOS returns error', async () => {

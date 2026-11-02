@@ -7,6 +7,8 @@ vi.mock('../../../src/lib/auth.js', () => ({
   saveCredentials: vi.fn(),
   loadCredentialsFromFile: vi.fn(),
   getDefaultSupabasePath: vi.fn(() => '/mock/path/supabase.json'),
+  // login verifies imported credentials with a refresh, so the mock must expose it.
+  refreshAccessToken: vi.fn(),
 }));
 
 import * as auth from '../../../src/lib/auth.js';
@@ -32,6 +34,12 @@ describe('login command', () => {
     vi.mocked(auth.loadCredentialsFromFile).mockResolvedValue({
       refreshToken: 'token',
       accessToken: 'access',
+      clientId: 'client',
+    });
+    // Verification refresh succeeds → "Credentials imported successfully" path.
+    vi.mocked(auth.refreshAccessToken).mockResolvedValue({
+      refreshToken: 'token',
+      accessToken: 'access-refreshed',
       clientId: 'client',
     });
 
