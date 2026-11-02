@@ -30,7 +30,7 @@ function normalizeFolder(folder: DocumentList): Folder {
     owner_id: folder.owner_id,
     document_ids: documentIds ?? [],
     is_favourite: folder.is_favourited ?? folder.is_favourite ?? false,
-    document_count: folder.document_count,
+    document_count: folder.document_count ?? documentIds?.length,
     visibility: folder.visibility,
   };
 }
