@@ -52,6 +52,17 @@ export interface ProseMirrorNode {
   attrs?: Record<string, unknown>;
 }
 
+export interface DocumentPanel {
+  document_id?: string;
+  id?: string;
+  template_slug?: string;
+  title?: string;
+  content?: ProseMirrorDoc;
+  original_content?: string;
+  created_at?: string;
+  updated_at?: string;
+}
+
 export interface Utterance {
   source: 'microphone' | 'system';
   text: string;

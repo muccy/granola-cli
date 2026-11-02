@@ -155,6 +155,20 @@ describe('api client', () => {
     });
   });
 
+  describe('getDocumentPanels', () => {
+    it('should call POST /v1/get-document-panels with document_id and return the panels', async () => {
+      const panels = [{ id: 'panel-1', template_slug: 'meeting-summary-consolidated' }];
+      vi.mocked(mockHttpClient.post).mockResolvedValue(panels);
+
+      const result = await api.getDocumentPanels('doc-123');
+
+      expect(mockHttpClient.post).toHaveBeenCalledWith('/v1/get-document-panels', {
+        document_id: 'doc-123',
+      });
+      expect(result).toEqual(panels);
+    });
+  });
+
   describe('getDocumentTranscript', () => {
     it('should call POST /v1/get-document-transcript with document_id', async () => {
       vi.mocked(mockHttpClient.post).mockResolvedValue([]);
