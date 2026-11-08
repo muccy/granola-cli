@@ -8,7 +8,10 @@ import type { Config } from '../types.js';
 const debug = createGranolaDebug('cmd:config');
 
 type ConfigKey = keyof Config;
-const CONFIG_VALUE_PARSERS: Record<ConfigKey, (value: string) => Config[ConfigKey]> = {
+const CONFIG_VALUE_PARSERS: Record<
+  ConfigKey,
+  (value: string) => Exclude<Config[ConfigKey], undefined>
+> = {
   default_workspace: (value: string) => value,
   pager: (value: string) => value,
   aliases: (value: string) => {
@@ -124,9 +127,9 @@ export function createConfigCommand() {
       }
 
       const parser = CONFIG_VALUE_PARSERS[key];
-      let parsedValue: Config[typeof key];
+      let parsedValue: Exclude<Config[typeof key], undefined>;
       try {
-        parsedValue = parser(value) as Config[typeof key];
+        parsedValue = parser(value) as Exclude<Config[typeof key], undefined>;
       } catch (error) {
         console.error(chalk.red('Invalid value for config key:'), key);
         if (error instanceof Error) {

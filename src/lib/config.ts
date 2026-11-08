@@ -31,7 +31,10 @@ export function getConfigValue<K extends keyof Config>(key: K): Config[K] {
   return value;
 }
 
-export function setConfigValue<K extends keyof Config>(key: K, value: Config[K]): void {
+export function setConfigValue<K extends keyof Config>(
+  key: K,
+  value: Exclude<Config[K], undefined>,
+): void {
   debug('setConfigValue: %s = %O', key, value);
   config.set(key, value);
 }

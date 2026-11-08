@@ -4,21 +4,23 @@ import { beforeEach, describe, expect, it, vi } from 'vitest';
 vi.mock('conf', () => {
   const store: Record<string, unknown> = {};
   return {
-    default: vi.fn(() => ({
-      get: vi.fn((key: string, defaultValue?: unknown) => store[key] ?? defaultValue),
-      set: vi.fn((key: string, value: unknown) => {
-        store[key] = value;
-      }),
-      delete: vi.fn((key: string) => {
-        delete store[key];
-      }),
-      clear: vi.fn(() => {
-        for (const key of Object.keys(store)) {
+    default: vi.fn(function (this: unknown) {
+      return {
+        get: vi.fn((key: string, defaultValue?: unknown) => store[key] ?? defaultValue),
+        set: vi.fn((key: string, value: unknown) => {
+          store[key] = value;
+        }),
+        delete: vi.fn((key: string) => {
           delete store[key];
-        }
-      }),
-      store,
-    })),
+        }),
+        clear: vi.fn(() => {
+          for (const key of Object.keys(store)) {
+            delete store[key];
+          }
+        }),
+        store,
+      };
+    }),
   };
 });
 
