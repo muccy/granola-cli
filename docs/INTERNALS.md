@@ -224,11 +224,13 @@ export async function resolveId(partialId: string): Promise<string | null> {
 ```
 
 **Behavior:**
+
 - If exactly one meeting matches the prefix, returns the full UUID
 - If no matches found, returns `null` (command exits with code 4)
 - If multiple matches found, throws an error (user must provide more characters)
 
 **Performance Optimizations:**
+
 - **Direct lookup for full UUIDs**: When the ID is 36+ characters (full UUID), attempts a direct `getDocumentMetadata()` call first, avoiding expensive pagination
 - **In-memory caching**: Meetings list is cached for 60 seconds to reduce API calls when resolving multiple IDs in quick succession
 - **Cache invalidation**: `clearMeetingsCache()` is exported for testing or manual cache clearing
@@ -278,12 +280,12 @@ Both note types are stored in ProseMirror JSON format and converted to Markdown 
 // services/meetings.ts
 export async function getNotes(id: string): Promise<ProseMirrorDoc | null> {
   const meeting = await get(id);
-  return meeting?.notes ?? null;  // Manual notes only
+  return meeting?.notes ?? null; // Manual notes only
 }
 
 export async function getEnhancedNotes(id: string): Promise<ProseMirrorDoc | null> {
   const meeting = await getWithPanel(id);
-  return meeting?.last_viewed_panel?.content ?? null;  // AI-enhanced notes
+  return meeting?.last_viewed_panel?.content ?? null; // AI-enhanced notes
 }
 ```
 
@@ -348,10 +350,7 @@ function applyMarks(text: string, marks?: Array<{ type: string }>): string {
 Transcripts are converted from utterance arrays to readable text:
 
 ```typescript
-export function formatTranscript(
-  utterances: Utterance[],
-  opts: FormatOptions = {}
-): string {
+export function formatTranscript(utterances: Utterance[], opts: FormatOptions = {}): string {
   const { timestamps = false, source = 'all' } = opts;
 
   let filtered = utterances;
@@ -390,6 +389,7 @@ export function formatTranscript(
 #### Speaker Identification
 
 The formatter maps audio sources to readable speaker labels:
+
 - `microphone` → "You"
 - `system` → "Participant"
 
@@ -399,8 +399,8 @@ Meeting participant information is available through the `people` field on the `
 
 ```typescript
 interface People {
-  creator?: Person;      // Meeting organizer
-  attendees?: Person[];  // Other participants
+  creator?: Person; // Meeting organizer
+  attendees?: Person[]; // Other participants
 }
 
 interface Person {
@@ -409,7 +409,7 @@ interface Person {
   details?: {
     employment?: {
       title?: string;
-      name?: string;  // company name
+      name?: string; // company name
     };
   };
 }
@@ -445,16 +445,15 @@ Commands use several formatting utilities from `lib/output.ts`:
 #### Table Rendering
 
 ```typescript
-export function table<T extends object>(
-  data: T[],
-  columns: Column<T>[]
-): string {
+export function table<T extends object>(data: T[], columns: Column<T>[]): string {
   const colWidths = columns.map((c) => c.width ?? null);
   const t = new Table({
     head: columns.map((c) => chalk.bold(c.header)),
     colWidths,
     style: { head: [], border: [] },
-    chars: { /* minimalist border characters */ },
+    chars: {
+      /* minimalist border characters */
+    },
   });
 
   for (const row of data) {
@@ -462,7 +461,7 @@ export function table<T extends object>(
       columns.map((c) => {
         const val = row[c.key];
         return c.format ? c.format(val) : String(val ?? '');
-      })
+      }),
     );
   }
 
@@ -471,6 +470,7 @@ export function table<T extends object>(
 ```
 
 Tables are configured with:
+
 - **Minimalist borders**: No box drawing characters, just spacing
 - **Bold headers**: Using chalk for emphasis
 - **Custom formatters**: Per-column value transformation
@@ -493,7 +493,6 @@ if (format) {
   return;
 }
 ```
-
 
 ### Pager Integration (`lib/pager.ts`)
 
@@ -880,6 +879,7 @@ npm run test:coverage
 ### 1. Native API Implementation
 
 The CLI uses a native HTTP client instead of an external dependency, providing:
+
 - Full control over retry logic and error handling
 - Type-safe API methods with complete TypeScript definitions
 - Automatic exponential backoff for rate limits (429) and server errors (5xx)

@@ -5,6 +5,7 @@
 Granola CLI is an unofficial, community-built TypeScript CLI for Granola.ai - an AI-powered meeting notes application. It provides terminal access to meetings, transcripts, and notes via the Granola API.
 
 **Tech Stack:**
+
 - TypeScript (strict mode) + Node.js 20+
 - Commander.js (CLI framework)
 - Native HTTP client with Granola API
@@ -213,6 +214,7 @@ granola [--no-pager]
 ### Entry Point
 
 **`main.ts`**
+
 - Initializes Commander program
 - Defines global flags (--no-pager)
 - Registers command groups
@@ -221,12 +223,14 @@ granola [--no-pager]
 ### Commands Layer
 
 Each command follows a consistent pattern:
+
 1. Define command metadata (name, description, args, options)
 2. Extract global options via `optsWithGlobals()`
 3. Call service layer for business logic
 4. Format and output results (JSON or formatted text)
 
 **Command Groups:**
+
 - **`auth/`** - Manages authentication lifecycle
 - **`meeting/`** - Primary feature set (list, view, notes, transcript, export)
 - **`workspace/`** - Workspace operations
@@ -237,30 +241,35 @@ Each command follows a consistent pattern:
 ### Services Layer
 
 **`services/client.ts`**
+
 - Singleton pattern for API client
 - Lazy initialization on first use
 - Auto-exits if credentials missing
 - Provides `resetClient()` for logout
 
 **`services/meetings.ts`**
+
 - Abstracts meeting-related API calls
 - Handles pagination and filtering
 - Normalizes API responses (handles `docs` vs `documents`)
 - Type-safe wrappers around API methods
 
 **`services/workspaces.ts` & `services/folders.ts`**
+
 - Similar patterns to meetings service
 - Workspace and folder CRUD operations
 
 ### Libraries Layer
 
 **`lib/auth.ts`** - Credential Management
+
 - Uses `cross-keychain` for secure OS-level storage
 - Validates sessions against Granola and imports legacy Supabase JSON
 - Default client ID fallback
 - Token refresh and login credential writes share a file lock (via `lock.ts`)
 
 **`lib/browser-auth.ts`** - Browser Sign-in
+
 - Generates an in-memory PKCE verifier and sign-in state
 - Opens Google or Microsoft sign-in
 - On macOS, opens Chrome and uses `chrome-callback.ts` to read the matching redirect across all windows by default; asks for manual paste after failure or one minute
@@ -269,12 +278,14 @@ Each command follows a consistent pattern:
 - Uses 15-second request timeouts and a five-minute prompt timeout
 
 **`lib/lock.ts`** - File-based Locking
+
 - Serializes token refresh and login credential writes across CLI processes
 - Uses `O_CREAT | O_EXCL` for atomic lock acquisition
 - Automatic stale lock cleanup (60s timeout)
 - Lock location: `~/Library/Caches/granola/` (macOS) or system temp dir
 
 **`lib/config.ts`** - Configuration
+
 - Uses `conf` package for persistent storage
 - Stores user preferences (default_workspace, pager, aliases)
 - Type-safe config operations
@@ -284,30 +295,35 @@ Each command follows a consistent pattern:
   - `pager` becomes the final fallback when pager-related env vars are unset
 
 **`lib/output.ts`** - Formatting
+
 - Table rendering with `cli-table3`
 - Date/duration formatters
 - Truncation utilities
 - Consistent styling with chalk
 
 **`lib/pager.ts`** - Terminal Pager
+
 - Respects GRANOLA_PAGER and PAGER env vars
 - Falls back to configured pager (if set) or `less -R`
 - Gracefully handles non-TTY environments
 - Pipes content via child process
 
 **`lib/prosemirror.ts`** - Document Conversion
+
 - Converts ProseMirror JSON to Markdown
 - Handles all common node types (headings, lists, code blocks)
 - Applies text marks (bold, italic, code, strikethrough)
 - Used for notes export
 
 **`lib/transcript.ts`** - Transcript Formatting
+
 - Filters by source (microphone/system/all)
 - Optional timestamp display
 - Speaker labeling (You vs Participant)
 - Clean text output
 
 **`lib/date-parser.ts`** - Natural Date Parsing
+
 - Zero external dependencies
 - Parses keywords: `today`, `yesterday`, `tomorrow`
 - Parses relative: `N days ago`, `last week`, `last month`
@@ -315,6 +331,7 @@ Each command follows a consistent pattern:
 - Parses simple: `Dec 20`, `20 Dec 2024`
 
 **`lib/filters.ts`** - Meeting Filters
+
 - Title search (case-insensitive partial match)
 - Attendee filter (partial name/email match)
 - Date filter (specific date or range)
@@ -326,6 +343,7 @@ Each command follows a consistent pattern:
 **`types.ts`** defines two categories:
 
 **API Types**:
+
 - `Person` - Participant details (name, email, employment info)
 - `People` - Meeting participants (creator + attendees)
 - `Meeting` - Meeting metadata, content, and participants
@@ -336,6 +354,7 @@ Each command follows a consistent pattern:
 - `Folder` - Folder metadata
 
 **CLI Types**:
+
 - `GlobalFlags` - Shared CLI options
 - `Config` - User configuration schema
 - `Credentials` - Authentication data structure
@@ -378,12 +397,14 @@ Account: `credentials`
 ## Error Handling
 
 Exit codes:
+
 - `0` - Success
 - `2` - Authentication required
 - `4` - Resource not found (e.g., no transcript)
 - Other - Command-specific errors
 
 Errors are displayed using chalk for visibility:
+
 - Red for errors
 - Yellow for warnings
 - Green for success messages
@@ -414,12 +435,14 @@ Errors are displayed using chalk for visibility:
 ## Build & Distribution
 
 **Build Process:**
+
 - `tsup` bundles TypeScript to ESM
 - Outputs to `dist/main.js`
 - Shebang (`#!/usr/bin/env node`) enables CLI execution
 - Node 20+ required
 
 **Package Structure:**
+
 ```json
 {
   "type": "module",
@@ -431,5 +454,6 @@ Errors are displayed using chalk for visibility:
 ```
 
 **Install Methods:**
+
 - npm: `npm install -g granola-cli`
 - Local: `npm link` in repo directory

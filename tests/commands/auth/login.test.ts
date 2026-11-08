@@ -49,23 +49,23 @@ describe('login command', () => {
     await rm(directory, { recursive: true, force: true });
   });
 
-  it.each([
-    'browser',
-    'import',
-  ])('waits for an ongoing refresh before saving %s credentials', async (source) => {
-    if (source === 'import') vi.mocked(auth.loadCredentialsFromFile).mockResolvedValue(creds);
-    const lock = await acquireLock();
-    if (!lock) throw new Error('Could not acquire test lock');
-    const pending = login(source === 'browser' ? ['--browser'] : []);
-    try {
-      await new Promise<void>((resolve) => setImmediate(resolve));
-      expect(auth.saveCredentials).not.toHaveBeenCalled();
-    } finally {
-      await releaseLock(lock);
-      await pending;
-    }
-    expect(auth.saveCredentials).toHaveBeenCalledWith(creds);
-  });
+  it.each(['browser', 'import'])(
+    'waits for an ongoing refresh before saving %s credentials',
+    async (source) => {
+      if (source === 'import') vi.mocked(auth.loadCredentialsFromFile).mockResolvedValue(creds);
+      const lock = await acquireLock();
+      if (!lock) throw new Error('Could not acquire test lock');
+      const pending = login(source === 'browser' ? ['--browser'] : []);
+      try {
+        await new Promise<void>((resolve) => setImmediate(resolve));
+        expect(auth.saveCredentials).not.toHaveBeenCalled();
+      } finally {
+        await releaseLock(lock);
+        await pending;
+      }
+      expect(auth.saveCredentials).toHaveBeenCalledWith(creds);
+    },
+  );
 
   it('keeps an existing working session', async () => {
     vi.mocked(auth.getAuthenticatedCredentials).mockResolvedValue(creds);

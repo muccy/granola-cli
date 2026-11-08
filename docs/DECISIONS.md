@@ -7,6 +7,7 @@ Architectural decisions documented from the codebase implementation, with ration
 **Decision:** Use Commander.js over alternatives (yargs, oclif, clipanion)
 
 **Rationale:**
+
 - Lightweight with minimal dependency footprint
 - Declarative command definition that's easy to read and maintain
 - Built-in help generation and version management
@@ -15,6 +16,7 @@ Architectural decisions documented from the codebase implementation, with ration
 - Native TypeScript support
 
 **Implementation:**
+
 ```typescript
 // src/main.ts
 program
@@ -29,6 +31,7 @@ program
 **Decision:** Single cached client instance across all commands
 
 **Rationale:**
+
 - Avoids repeated authentication checks and token validation
 - Memory efficient - one client instance serves all operations
 - Consistent state across operations within a session
@@ -36,6 +39,7 @@ program
 - Faster command execution after initial client creation
 
 **Implementation:**
+
 ```typescript
 // src/services/client.ts
 let client: GranolaClientInstance | null = null;
@@ -47,6 +51,7 @@ export async function getClient(): Promise<GranolaClientInstance> {
 ```
 
 **Trade-offs:**
+
 - Cannot easily switch between different authenticated users in a session
 - Requires explicit reset mechanism for testing (`resetClient()`)
 
@@ -55,6 +60,7 @@ export async function getClient(): Promise<GranolaClientInstance> {
 **Decision:** Use cross-keychain instead of file-based storage
 
 **Rationale:**
+
 - Platform-native security (encrypted at rest by OS)
 - No plaintext secrets on disk
 - User-familiar security model (Keychain on macOS, Credential Manager on Windows)
@@ -62,6 +68,7 @@ export async function getClient(): Promise<GranolaClientInstance> {
 - Proper secret lifecycle management
 
 **Implementation:**
+
 ```typescript
 // src/lib/auth.ts
 import { getPassword, setPassword, deletePassword } from 'cross-keychain';
@@ -71,6 +78,7 @@ const ACCOUNT_NAME = 'credentials';
 ```
 
 **Trade-offs:**
+
 - Requires OS-specific permissions on first access
 - More complex testing setup (needs mocking)
 - Cannot easily inspect credentials manually for debugging
@@ -80,6 +88,7 @@ const ACCOUNT_NAME = 'credentials';
 **Decision:** Split API operations (services/) from utilities (lib/)
 
 **Rationale:**
+
 - Clear responsibility boundaries and separation of concerns
 - Services handle external communication with Granola API
 - Libraries provide internal utilities and business logic
@@ -88,6 +97,7 @@ const ACCOUNT_NAME = 'credentials';
 - Supports dependency injection patterns
 
 **Structure:**
+
 ```
 src/
 ├── services/        # External API communication
@@ -108,6 +118,7 @@ src/
 **Decision:** Use `createXCommand()` factory pattern
 
 **Rationale:**
+
 - Enables isolated testing - each test gets fresh command instance
 - Fresh command instances per test avoid shared state issues
 - Easier to test with different configurations
@@ -115,19 +126,23 @@ src/
 - Clear separation between command definition and registration
 
 **Implementation:**
+
 ```typescript
 // src/commands/meeting/list.ts
 export function createListCommand() {
   return new Command('list')
     .description('List meetings')
     .option('-l, --limit <n>', 'Number of meetings', '20')
-    .action(async (opts, cmd) => { /* ... */ });
+    .action(async (opts, cmd) => {
+      /* ... */
+    });
 }
 
 export const listCommand = createListCommand();
 ```
 
 **Used in tests:**
+
 ```typescript
 // tests/commands/meeting/list.test.ts
 const program = new Command();
@@ -139,6 +154,7 @@ program.addCommand(createListCommand());
 **Decision:** Support both table output and per-command `-o/--output <format>`
 
 **Rationale:**
+
 - Human-readable for interactive use (colored tables, formatted dates)
 - Machine-readable for scripting and automation when `-o json|yaml|toon` is provided
 - Unix philosophy compatibility (compose with other tools)
@@ -146,6 +162,7 @@ program.addCommand(createListCommand());
 - Progressive enhancement - start simple, pipe for advanced usage
 
 **Implementation:**
+
 ```typescript
 const format = opts.output || null;
 if (format) {
@@ -158,6 +175,7 @@ console.log(output);
 ```
 
 **Trade-offs:**
+
 - Dual code paths increase maintenance burden
 - Must ensure format outputs stay in sync
 
@@ -166,6 +184,7 @@ console.log(output);
 **Decision:** Convert server format to Markdown locally
 
 **Rationale:**
+
 - Universal readable format that works everywhere
 - Works with existing tools (less, grep, editors)
 - Preserves semantic structure (headings, lists, code blocks)
@@ -173,6 +192,7 @@ console.log(output);
 - User can pipe output to any markdown processor
 
 **Implementation:**
+
 ```typescript
 // src/lib/prosemirror.ts
 export function toMarkdown(doc: ProseMirrorDoc | null): string {
@@ -182,6 +202,7 @@ export function toMarkdown(doc: ProseMirrorDoc | null): string {
 ```
 
 **Trade-offs:**
+
 - Conversion logic must be maintained when API changes
 - Some ProseMirror features may not have markdown equivalents
 - No round-trip conversion (markdown → ProseMirror not implemented)
@@ -191,6 +212,7 @@ export function toMarkdown(doc: ProseMirrorDoc | null): string {
 **Decision:** Pipe long output through system pager
 
 **Rationale:**
+
 - Better UX for large content (notes, transcripts)
 - Respects user preferences (PAGER environment variable)
 - Smart TTY detection - only page when interactive
@@ -198,6 +220,7 @@ export function toMarkdown(doc: ProseMirrorDoc | null): string {
 - Custom override via GRANOLA_PAGER for tool-specific needs
 
 **Implementation:**
+
 ```typescript
 // src/lib/pager.ts
 export function getPagerCommand(): string {
@@ -214,6 +237,7 @@ export async function pipeToPager(content: string): Promise<void> {
 ```
 
 **Trade-offs:**
+
 - Requires spawning child process
 - Platform-specific pager behavior
 - More complex testing (needs TTY mocking)
@@ -223,6 +247,7 @@ export async function pipeToPager(content: string): Promise<void> {
 **Decision:** Use ES modules exclusively (no CommonJS)
 
 **Rationale:**
+
 - Modern JavaScript standard supported natively in Node.js
 - Better tree-shaking for smaller bundle sizes
 - Native async/await support without transformation
@@ -231,6 +256,7 @@ export async function pipeToPager(content: string): Promise<void> {
 - Future-proof as ecosystem moves to ESM
 
 **Configuration:**
+
 ```json
 // package.json
 {
@@ -250,6 +276,7 @@ export async function pipeToPager(content: string): Promise<void> {
 ```
 
 **Trade-offs:**
+
 - Cannot support older Node.js versions
 - Some legacy tools may not work
 - Requires .js extensions in imports
@@ -259,6 +286,7 @@ export async function pipeToPager(content: string): Promise<void> {
 **Decision:** Enable all strict type checking options
 
 **Rationale:**
+
 - Catch errors at compile time before deployment
 - Better IDE support with accurate autocomplete
 - Self-documenting code through explicit types
@@ -267,6 +295,7 @@ export async function pipeToPager(content: string): Promise<void> {
 - Industry best practice for TypeScript projects
 
 **Configuration:**
+
 ```json
 // tsconfig.json
 {
@@ -279,6 +308,7 @@ export async function pipeToPager(content: string): Promise<void> {
 ```
 
 **Trade-offs:**
+
 - Initial development may be slower
 - More verbose code in some cases
 - Requires type casting for undocumented API methods (see Decision #12)
@@ -288,6 +318,7 @@ export async function pipeToPager(content: string): Promise<void> {
 **Decision:** Enforce 95%+ coverage for lines/functions/statements
 
 **Rationale:**
+
 - Confidence in refactoring without breaking changes
 - Documentation through tests (living specification)
 - Catch edge cases early in development
@@ -296,6 +327,7 @@ export async function pipeToPager(content: string): Promise<void> {
 - Quality signal for contributors
 
 **Configuration:**
+
 ```typescript
 // vitest.config.ts
 coverage: {
@@ -309,6 +341,7 @@ coverage: {
 ```
 
 **Trade-offs:**
+
 - Increased test maintenance burden
 - May encourage "coverage theater" vs meaningful tests
 - Some code paths difficult to test (error conditions, network failures)
@@ -319,6 +352,7 @@ coverage: {
 **Decision:** Store command aliases in user config file
 
 **Rationale:**
+
 - Persistent shortcuts across sessions
 - User customization without modifying shell configuration
 - No need to learn shell alias syntax
@@ -327,6 +361,7 @@ coverage: {
 - Built-in list/delete functionality
 
 **Implementation:**
+
 ```typescript
 // src/lib/config.ts
 export function setAlias(name: string, command: string): void {
@@ -348,6 +383,7 @@ function expandAlias(args: string[]): string[] {
 ```
 
 **Trade-offs:**
+
 - Additional feature to maintain and document
 - Potential confusion when aliases shadow real commands
 - Requires shell-quote parser dependency for accurate splitting
@@ -359,6 +395,7 @@ function expandAlias(args: string[]): string[] {
 **Issue:** Initially considered using `granola-ts-client` but it lacked complete TypeScript types and retry logic
 
 **Current approach:**
+
 ```typescript
 // Native HTTP client with type-safe API wrapper
 const httpClient = createHttpClient(creds.accessToken);
@@ -370,6 +407,7 @@ const res = await client.getDocumentsBatch({
 ```
 
 **Benefits:**
+
 - **Type Safety:** Full TypeScript types for all API methods
 - **Retry Logic:** Automatic exponential backoff for 429/5xx errors
 - **Control:** Direct control over headers and error handling
@@ -380,6 +418,7 @@ const res = await client.getDocumentsBatch({
 **Issue:** Non-sensitive configuration stored in plaintext JSON
 
 **Current approach:**
+
 ```typescript
 // Using 'conf' package for config storage
 const config = new Conf<Config>({
@@ -389,6 +428,7 @@ const config = new Conf<Config>({
 ```
 
 **Trade-offs:**
+
 - **Convenience:** Easy to inspect and debug configuration
 - **Security:** Acceptable for non-sensitive data (aliases, preferences)
 - **Credentials:** Handled separately via OS keychain (secure)
@@ -410,6 +450,7 @@ Contributor investigations in [#1](https://github.com/magarcia/granola-cli/pull/
 **Current approach:** Users must update via npm/package manager
 
 **Trade-offs:**
+
 - **Simplicity:** Fewer dependencies and moving parts
 - **User control:** Explicit update decision
 - **Alternative:** Could add update check on startup (may be intrusive)
@@ -417,23 +458,27 @@ Contributor investigations in [#1](https://github.com/magarcia/granola-cli/pull/
 ## Consistency Patterns
 
 ### Error Handling
+
 - Services return null/empty arrays on errors
 - Commands handle null cases with user-friendly messages
 - Exit code 2 for authentication errors
 
 ### Testing
+
 - Factory pattern for all commands
 - Vitest for all tests
 - Mock external dependencies (API client, keychain)
 - 95%+ coverage enforced
 
 ### Naming Conventions
+
 - Commands use kebab-case (meeting-list)
 - TypeScript uses camelCase for variables/functions
 - Types use PascalCase
 - Constants use UPPER_SNAKE_CASE
 
 ### File Organization
+
 - Index files for command groups
 - One command per file
 - Tests mirror source structure

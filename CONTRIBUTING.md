@@ -238,7 +238,12 @@ describe('action command', () => {
     await program.parseAsync(['node', 'test', 'action', '123', '--output', 'json']);
 
     const jsonOutput = consoleLogs.find((log) => {
-      try { JSON.parse(log); return true; } catch { return false; }
+      try {
+        JSON.parse(log);
+        return true;
+      } catch {
+        return false;
+      }
     });
     expect(jsonOutput).toBeDefined();
   });
@@ -252,9 +257,9 @@ describe('action command', () => {
     const program = new Command();
     program.addCommand(createActionCommand());
 
-    await expect(
-      program.parseAsync(['node', 'test', 'action', 'nonexistent'])
-    ).rejects.toThrow('process.exit');
+    await expect(program.parseAsync(['node', 'test', 'action', 'nonexistent'])).rejects.toThrow(
+      'process.exit',
+    );
     expect(mockExit).toHaveBeenCalledWith(4);
 
     mockExit.mockRestore();
@@ -266,12 +271,12 @@ describe('action command', () => {
 
 The project enforces these coverage thresholds:
 
-| Metric | Threshold |
-|--------|-----------|
-| Statements | 95% |
-| Branches | 90% |
-| Functions | 95% |
-| Lines | 95% |
+| Metric     | Threshold |
+| ---------- | --------- |
+| Statements | 95%       |
+| Branches   | 90%       |
+| Functions  | 95%       |
+| Lines      | 95%       |
 
 ## Code Style
 
@@ -318,8 +323,7 @@ Follow the [command structure](#command-structure) pattern above.
 import { Command } from 'commander';
 import { actionCommand } from './action.js';
 
-export const myCommand = new Command('mycommand')
-  .description('My command description');
+export const myCommand = new Command('mycommand').description('My command description');
 
 myCommand.addCommand(actionCommand);
 ```
@@ -351,6 +355,7 @@ touch tests/commands/mycommand/action.test.ts
 ### Before Submitting
 
 1. **Run all checks locally:**
+
    ```bash
    npm run typecheck
    npm run test:coverage

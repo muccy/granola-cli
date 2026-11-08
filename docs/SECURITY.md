@@ -15,6 +15,7 @@ Granola CLI uses platform-native secure storage for credentials via the `cross-k
 - **Linux**: Secret Service
 
 **Storage Details:**
+
 - Service name: `com.granola.cli`
 - Account: `credentials`
 - Format: JSON containing `refreshToken`, `accessToken`, and `clientId`
@@ -44,12 +45,14 @@ The CLI automatically handles token expiration:
 **Location**: `lib/auth.ts`, `lib/lock.ts`, `services/client.ts`
 
 **How it works:**
+
 - `refreshAccessToken()` calls Granola's backend to refresh expired tokens
 - `withTokenRefresh()` wrapper automatically retries operations on 401 errors
 - All API-calling service methods are wrapped with automatic token refresh
 - New credentials are saved immediately after refresh
 
 **Token Rotation Flow:**
+
 1. API call fails with 401 (Unauthorized)
 2. `withTokenRefresh` catches the error and calls `refreshAccessToken()`
 3. File-based lock is acquired to prevent race conditions (via `lib/lock.ts`)
@@ -67,12 +70,14 @@ Refresh tokens rotate. The CLI validates refresh responses and saves new credent
 **Location**: `lib/lock.ts`
 
 When multiple CLI processes run concurrently (e.g., in scripts), they may both encounter expired tokens and attempt to refresh simultaneously. Without protection, this causes a race condition:
+
 1. Process A reads refresh token T1
 2. Process B reads refresh token T1
 3. Process A refreshes and invalidates T1, gets T2
 4. Process B tries to refresh with T1 (now invalid) and fails
 
 The CLI prevents this using file-based locking:
+
 - Lock file: `~/Library/Caches/granola/granola-token-refresh.lock` (macOS) or system temp dir
 - Uses `O_CREAT | O_EXCL` for atomic lock acquisition
 - 30-second timeout waiting for lock
@@ -154,12 +159,12 @@ DEBUG=granola:lib:auth granola auth status
 
 ## Exit Codes
 
-| Code | Meaning |
-|------|---------|
-| 0 | Success |
-| 1 | General error |
-| 2 | Authentication required |
-| 4 | Resource not found |
+| Code | Meaning                 |
+| ---- | ----------------------- |
+| 0    | Success                 |
+| 1    | General error           |
+| 2    | Authentication required |
+| 4    | Resource not found      |
 
 ## Security Best Practices for Users
 

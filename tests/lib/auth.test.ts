@@ -180,20 +180,19 @@ describe('auth', () => {
       expect(await validateCredentials(creds)).toBe(false);
     });
 
-    it.each([
-      '\n',
-      '\0',
-      '\u0100',
-    ])('does not expose malformed access tokens containing %j', async (separator) => {
-      mockFetch.mockImplementation((_url, options) => {
-        new Headers(options.headers);
-        return { ok: true, status: 200 };
-      });
-      await expect(
-        validateCredentials({ ...creds, accessToken: `private-token${separator}invalid` }),
-      ).rejects.toThrow('Invalid Granola access token.');
-      expect(mockFetch).not.toHaveBeenCalled();
-    });
+    it.each(['\n', '\0', '\u0100'])(
+      'does not expose malformed access tokens containing %j',
+      async (separator) => {
+        mockFetch.mockImplementation((_url, options) => {
+          new Headers(options.headers);
+          return { ok: true, status: 200 };
+        });
+        await expect(
+          validateCredentials({ ...creds, accessToken: `private-token${separator}invalid` }),
+        ).rejects.toThrow('Invalid Granola access token.');
+        expect(mockFetch).not.toHaveBeenCalled();
+      },
+    );
 
     it('does not report network failures as logged out', async () => {
       mockFetch.mockRejectedValue(new Error('fetch failed'));

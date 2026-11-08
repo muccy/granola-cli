@@ -31,6 +31,7 @@
 The Granola API provides programmatic access to meeting notes, transcripts, workspaces, and document management functionality. The API uses JSON for request and response bodies, and implements OAuth 2.0 with refresh token rotation for authentication.
 
 This specification was derived through analysis of:
+
 - Network traffic from the Granola Electron desktop application
 - Token storage files in the application data directory
 - API request/response patterns during normal application usage
@@ -83,12 +84,14 @@ The CLI does not decrypt `supabase.json.enc` or `stored-accounts.json.enc`. Brow
 **Endpoint:** `POST https://api.granola.ai/v1/refresh-access-token`
 
 **Request Headers:**
+
 ```http
 Content-Type: application/json
 Authorization: Bearer <current-access-token>
 ```
 
 **Request Body:**
+
 ```json
 {
   "refresh_token": "22oWVolI9TRlthI2J5asHbfyx"
@@ -96,6 +99,7 @@ Authorization: Bearer <current-access-token>
 ```
 
 **Response:**
+
 ```json
 {
   "access_token": "eyJhbGciOiJSUzI1NiIsImtpZCI6...",
@@ -154,11 +158,13 @@ Retrieves all workspaces (organizations) accessible to the authenticated user.
 **Endpoint:** `POST /v1/get-workspaces`
 
 **Request Body:**
+
 ```json
 {}
 ```
 
 **Response (Nested format):**
+
 ```json
 {
   "workspaces": [
@@ -181,6 +187,7 @@ Retrieves all workspaces (organizations) accessible to the authenticated user.
 ```
 
 **Response (Flat format - also observed):**
+
 ```json
 [
   {
@@ -196,27 +203,27 @@ Retrieves all workspaces (organizations) accessible to the authenticated user.
 
 **Response Fields (Nested format):**
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `workspace_id` | string | Unique workspace identifier (UUID) |
-| `slug` | string | URL-friendly workspace identifier |
-| `display_name` | string | Human-readable workspace name |
-| `is_locked` | boolean | Whether workspace is locked/read-only |
-| `created_at` | ISO8601 | Workspace creation timestamp |
-| `updated_at` | ISO8601 | Last modification timestamp |
-| `privacy_mode_enabled` | boolean | Privacy mode status |
-| `sharing_link_visibility` | string | Sharing visibility setting |
-| `role` | string | User's role in workspace (owner/member) |
-| `plan_type` | string | Subscription plan type |
+| Field                     | Type    | Description                             |
+| ------------------------- | ------- | --------------------------------------- |
+| `workspace_id`            | string  | Unique workspace identifier (UUID)      |
+| `slug`                    | string  | URL-friendly workspace identifier       |
+| `display_name`            | string  | Human-readable workspace name           |
+| `is_locked`               | boolean | Whether workspace is locked/read-only   |
+| `created_at`              | ISO8601 | Workspace creation timestamp            |
+| `updated_at`              | ISO8601 | Last modification timestamp             |
+| `privacy_mode_enabled`    | boolean | Privacy mode status                     |
+| `sharing_link_visibility` | string  | Sharing visibility setting              |
+| `role`                    | string  | User's role in workspace (owner/member) |
+| `plan_type`               | string  | Subscription plan type                  |
 
 **Response Fields (Flat format):**
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | string | Unique workspace identifier (UUID) |
-| `name` | string | Workspace name |
-| `created_at` | ISO8601 | Workspace creation timestamp |
-| `owner_id` | string | Owner user ID |
+| Field        | Type    | Description                        |
+| ------------ | ------- | ---------------------------------- |
+| `id`         | string  | Unique workspace identifier (UUID) |
+| `name`       | string  | Workspace name                     |
+| `created_at` | ISO8601 | Workspace creation timestamp       |
+| `owner_id`   | string  | Owner user ID                      |
 
 ---
 
@@ -231,6 +238,7 @@ Retrieves all document lists (folders) accessible to the user.
 **Endpoint:** `POST /v1/get-document-lists-metadata`
 
 **Request Body:**
+
 ```json
 {
   "include_document_ids": true,
@@ -239,6 +247,7 @@ Retrieves all document lists (folders) accessible to the user.
 ```
 
 **Response:**
+
 ```json
 {
   "lists": {
@@ -256,19 +265,20 @@ Retrieves all document lists (folders) accessible to the user.
 
 **Response Fields:**
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | string | Unique list identifier (UUID) |
-| `title` / `name` | string | List name |
-| `workspace_id` | string, optional | Parent workspace ID |
-| `workspace_display_name` | string, optional | Workspace name for display |
-| `owner_id` | string, optional | User ID of list creator |
-| `created_at` | ISO8601 | List creation timestamp |
-| `is_favourited` | boolean, optional | User's favourite status |
-| `document_count` | number, optional | Number of documents in the folder |
-| `document_ids` | array | Document ID strings requested with `include_document_ids` |
+| Field                    | Type              | Description                                               |
+| ------------------------ | ----------------- | --------------------------------------------------------- |
+| `id`                     | string            | Unique list identifier (UUID)                             |
+| `title` / `name`         | string            | List name                                                 |
+| `workspace_id`           | string, optional  | Parent workspace ID                                       |
+| `workspace_display_name` | string, optional  | Workspace name for display                                |
+| `owner_id`               | string, optional  | User ID of list creator                                   |
+| `created_at`             | ISO8601           | List creation timestamp                                   |
+| `is_favourited`          | boolean, optional | User's favourite status                                   |
+| `document_count`         | number, optional  | Number of documents in the folder                         |
+| `document_ids`           | array             | Document ID strings requested with `include_document_ids` |
 
 **Notes:**
+
 - The response's `lists` property is an object keyed by folder ID.
 - The CLI preserves explicit `document_ids`, with embedded `documents` as a fallback when IDs are absent.
 - The service maps `is_favourited` to the published `Folder.is_favourite` property.
@@ -288,6 +298,7 @@ Retrieves a paginated list of documents owned by the authenticated user.
 **⚠️ LIMITATION**: This endpoint does **NOT** return shared documents. Use `/v1/get-documents-batch` for shared documents.
 
 **Request Body (Offset-based pagination):**
+
 ```json
 {
   "limit": 100,
@@ -297,6 +308,7 @@ Retrieves a paginated list of documents owned by the authenticated user.
 ```
 
 **Request Body (Cursor-based pagination):**
+
 ```json
 {
   "workspace_id": "924ba459-d11d-4da8-88c8-789979794744",
@@ -308,17 +320,18 @@ Retrieves a paginated list of documents owned by the authenticated user.
 
 **Request Parameters:**
 
-| Parameter | Type | Required | Default | Description |
-|-----------|------|----------|---------|-------------|
-| `workspace_id` | string | No | - | Filter by workspace ID |
-| `limit` | integer | No | 100 | Number of documents per page (max: 100) |
-| `offset` | integer | No | 0 | Pagination offset (alternative to cursor) |
-| `cursor` | string | No | - | Pagination cursor from previous response |
-| `include_last_viewed_panel` | boolean | No | false | Include document content (ProseMirror JSON) |
+| Parameter                   | Type    | Required | Default | Description                                 |
+| --------------------------- | ------- | -------- | ------- | ------------------------------------------- |
+| `workspace_id`              | string  | No       | -       | Filter by workspace ID                      |
+| `limit`                     | integer | No       | 100     | Number of documents per page (max: 100)     |
+| `offset`                    | integer | No       | 0       | Pagination offset (alternative to cursor)   |
+| `cursor`                    | string  | No       | -       | Pagination cursor from previous response    |
+| `include_last_viewed_panel` | boolean | No       | false   | Include document content (ProseMirror JSON) |
 
 > **Note:** Both offset-based and cursor-based pagination are supported. Offset-based is simpler for sequential fetching; cursor-based is more reliable for consistency.
 
 **Response:**
+
 ```json
 {
   "docs": [
@@ -385,6 +398,7 @@ Retrieves a paginated list of documents owned by the authenticated user.
 ```
 
 **Pagination:**
+
 - Use `next_cursor` from response for subsequent requests
 - When `next_cursor` is null or absent, no more pages exist
 - Maximum `limit` is 100 documents per request
@@ -398,6 +412,7 @@ Fetch multiple documents by their IDs. **This is the recommended method for fetc
 **Endpoint:** `POST /v1/get-documents-batch`
 
 **Request Body:**
+
 ```json
 {
   "document_ids": ["doc_123", "doc_456", "doc_789"],
@@ -407,12 +422,13 @@ Fetch multiple documents by their IDs. **This is the recommended method for fetc
 
 **Request Parameters:**
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `document_ids` | array | Yes | Array of document IDs to fetch (max: 100) |
-| `include_last_viewed_panel` | boolean | No | Include document content |
+| Parameter                   | Type    | Required | Description                               |
+| --------------------------- | ------- | -------- | ----------------------------------------- |
+| `document_ids`              | array   | Yes      | Array of document IDs to fetch (max: 100) |
+| `include_last_viewed_panel` | boolean | No       | Include document content                  |
 
 **Response:**
+
 ```json
 {
   "documents": [
@@ -435,6 +451,7 @@ Fetch multiple documents by their IDs. **This is the recommended method for fetc
 ```
 
 **Notes:**
+
 - Returns both owned and shared documents
 - Batch size limit: typically 100 documents per request
 - Response may use `documents` or `docs` field name depending on API version
@@ -451,6 +468,7 @@ Retrieves metadata for a specific document, including creator and attendee infor
 **Endpoint:** `POST /v1/get-document-metadata`
 
 **Request Body:**
+
 ```json
 {
   "document_id": "doc_123"
@@ -458,6 +476,7 @@ Retrieves metadata for a specific document, including creator and attendee infor
 ```
 
 **Response:**
+
 ```json
 {
   "creator": {
@@ -497,6 +516,7 @@ Retrieves the audio transcript for a specific document, including timestamps and
 **Endpoint:** `POST /v1/get-document-transcript`
 
 **Request Body:**
+
 ```json
 {
   "document_id": "doc_123"
@@ -504,6 +524,7 @@ Retrieves the audio transcript for a specific document, including timestamps and
 ```
 
 **Response:**
+
 ```json
 [
   {
@@ -529,17 +550,18 @@ Retrieves the audio transcript for a specific document, including timestamps and
 
 **Response Fields:**
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `document_id` | string | Document identifier |
-| `id` | string | Unique segment identifier |
-| `text` | string | Transcribed text |
-| `source` | string | Audio source: `microphone` or `system` |
-| `start_timestamp` | ISO8601 | Utterance start time |
-| `end_timestamp` | ISO8601 | Utterance end time |
-| `is_final` | boolean | Whether transcription is finalized |
+| Field             | Type    | Description                            |
+| ----------------- | ------- | -------------------------------------- |
+| `document_id`     | string  | Document identifier                    |
+| `id`              | string  | Unique segment identifier              |
+| `text`            | string  | Transcribed text                       |
+| `source`          | string  | Audio source: `microphone` or `system` |
+| `start_timestamp` | ISO8601 | Utterance start time                   |
+| `end_timestamp`   | ISO8601 | Utterance end time                     |
+| `is_final`        | boolean | Whether transcription is finalized     |
 
 **Notes:**
+
 - Returns `404` if document has no associated transcript
 - Transcripts are generated from meeting recordings
 - Returns empty array `[]` for documents without transcripts
@@ -553,6 +575,7 @@ Updates a document's properties.
 **Endpoint:** `POST /v1/update-document`
 
 **Request Body:**
+
 ```json
 {
   "document_id": "doc_123",
@@ -563,13 +586,14 @@ Updates a document's properties.
 
 **Request Parameters:**
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `document_id` | string | Yes | Document to update |
-| `title` | string | No | New document title |
-| `notes_markdown` | string | No | Document content in Markdown |
+| Parameter        | Type   | Required | Description                  |
+| ---------------- | ------ | -------- | ---------------------------- |
+| `document_id`    | string | Yes      | Document to update           |
+| `title`          | string | No       | New document title           |
+| `notes_markdown` | string | No       | Document content in Markdown |
 
 **Response:**
+
 ```json
 {
   "success": true
@@ -585,6 +609,7 @@ Updates a specific panel within a document.
 **Endpoint:** `POST /v1/update-document-panel`
 
 **Request Body:**
+
 ```json
 {
   "document_id": "doc_123",
@@ -608,13 +633,14 @@ Updates a specific panel within a document.
 
 **Request Parameters:**
 
-| Parameter | Type | Required | Description |
-|-----------|------|----------|-------------|
-| `document_id` | string | Yes | Document containing the panel |
-| `panel_id` | string | Yes | Panel to update |
-| `content` | object | No | ProseMirror document content |
+| Parameter     | Type   | Required | Description                   |
+| ------------- | ------ | -------- | ----------------------------- |
+| `document_id` | string | Yes      | Document containing the panel |
+| `panel_id`    | string | Yes      | Panel to update               |
+| `content`     | object | No       | ProseMirror document content  |
 
 **Response:**
+
 ```json
 {
   "success": true
@@ -632,11 +658,13 @@ Retrieves available panel templates for document organization.
 **Endpoint:** `POST /v1/get-panel-templates`
 
 **Request Body:**
+
 ```json
 {}
 ```
 
 **Response:**
+
 ```json
 [
   {
@@ -676,20 +704,21 @@ Retrieves available panel templates for document organization.
 
 **Response Fields:**
 
-| Field | Type | Description |
-|-------|------|-------------|
-| `id` | string | Unique template identifier |
-| `is_granola` | boolean | Whether template is official Granola template |
-| `title` | string | Template name |
-| `category` | string | Template category |
-| `sections` | array | Template sections with headings |
-| `color` | string | Hex color code |
-| `symbol` | string | Emoji or icon symbol |
-| `description` | string | Template description |
-| `shared_with` | string | Sharing scope |
-| `owner_id` | string | Template creator (null for official) |
+| Field         | Type    | Description                                   |
+| ------------- | ------- | --------------------------------------------- |
+| `id`          | string  | Unique template identifier                    |
+| `is_granola`  | boolean | Whether template is official Granola template |
+| `title`       | string  | Template name                                 |
+| `category`    | string  | Template category                             |
+| `sections`    | array   | Template sections with headings               |
+| `color`       | string  | Hex color code                                |
+| `symbol`      | string  | Emoji or icon symbol                          |
+| `description` | string  | Template description                          |
+| `shared_with` | string  | Sharing scope                                 |
+| `owner_id`    | string  | Template creator (null for official)          |
 
 **Notes:**
+
 - Returns empty array `[]` if no templates available
 - Official Granola templates have `is_granola: true`
 - Custom templates have `owner_id` set to creator's user ID
@@ -705,6 +734,7 @@ Retrieves people data and contacts.
 **Endpoint:** `POST /v1/get-people`
 
 **Request Body:**
+
 ```json
 {}
 ```
@@ -720,6 +750,7 @@ Retrieves feature flags for the authenticated user.
 **Endpoint:** `POST /v1/get-feature-flags`
 
 **Request Body:**
+
 ```json
 {}
 ```
@@ -735,6 +766,7 @@ Retrieves Notion integration details.
 **Endpoint:** `POST /v1/get-notion-integration`
 
 **Request Body:**
+
 ```json
 {}
 ```
@@ -750,6 +782,7 @@ Retrieves subscription information for the authenticated user.
 **Endpoint:** `POST /v1/get-subscriptions`
 
 **Request Body:**
+
 ```json
 {}
 ```
@@ -765,11 +798,13 @@ Refreshes Google Calendar events integration.
 **Endpoint:** `POST /v1/refresh-google-events`
 
 **Request Body:**
+
 ```json
 {}
 ```
 
 **Response:**
+
 ```json
 {
   "success": true
@@ -794,21 +829,21 @@ Checks for application updates (macOS).
 
 ```typescript
 interface Workspace {
-  workspace_id: string;           // UUID
-  slug: string;                   // URL-friendly identifier
-  display_name: string;           // Human-readable name
-  is_locked: boolean;             // Read-only status
-  created_at: string;             // ISO8601 timestamp
-  updated_at: string;             // ISO8601 timestamp
-  privacy_mode_enabled: boolean;  // Privacy mode status
-  sharing_link_visibility: string | null;  // Sharing setting
+  workspace_id: string; // UUID
+  slug: string; // URL-friendly identifier
+  display_name: string; // Human-readable name
+  is_locked: boolean; // Read-only status
+  created_at: string; // ISO8601 timestamp
+  updated_at: string; // ISO8601 timestamp
+  privacy_mode_enabled: boolean; // Privacy mode status
+  sharing_link_visibility: string | null; // Sharing setting
 }
 
 interface WorkspaceResponse {
   workspaces: Array<{
     workspace: Workspace;
-    role: string;                 // "owner" | "member"
-    plan_type: string;            // Subscription tier
+    role: string; // "owner" | "member"
+    plan_type: string; // Subscription tier
   }>;
 }
 ```
@@ -844,34 +879,35 @@ interface DocumentListsResponse {
 
 ```typescript
 interface Document {
-  id: string;                     // Unique identifier
-  created_at: string;             // ISO8601 timestamp
-  updated_at: string;             // ISO8601 timestamp
-  title: string;                  // Document title
-  user_id: string;                // Owner user ID
-  workspace_id?: string;          // Parent workspace
-  cloned_from: string | null;     // Source document if cloned
-  notes: ProseMirrorDocument;     // Structured content
-  notes_plain: string;            // Plain text content
-  notes_markdown: string;         // Markdown content
-  transcribe: boolean;            // Whether to transcribe
-  google_calendar_event: object | null;  // Calendar integration
-  deleted_at: string | null;      // Soft delete timestamp
-  type: string | null;            // Document type
-  overview: string | null;        // AI-generated overview
-  public: boolean;                // Public visibility
-  people: DocumentPeople;         // Creator and attendees
-  chapters: any[] | null;         // Document chapters
-  meeting_end_count: number;      // Meeting session count
-  selected_template: string | null;  // Applied template ID
-  valid_meeting: boolean;         // Meeting validation status
-  summary: string | null;         // AI-generated summary
-  has_shareable_link: boolean;    // Sharing link status
-  show_private_notes: boolean;    // Private notes visibility
-  attachments: any[];             // File attachments
-  privacy_mode_enabled: boolean;  // Privacy mode status
-  sharing_link_visibility: string;  // Sharing visibility
-  last_viewed_panel?: {           // Panel content (optional)
+  id: string; // Unique identifier
+  created_at: string; // ISO8601 timestamp
+  updated_at: string; // ISO8601 timestamp
+  title: string; // Document title
+  user_id: string; // Owner user ID
+  workspace_id?: string; // Parent workspace
+  cloned_from: string | null; // Source document if cloned
+  notes: ProseMirrorDocument; // Structured content
+  notes_plain: string; // Plain text content
+  notes_markdown: string; // Markdown content
+  transcribe: boolean; // Whether to transcribe
+  google_calendar_event: object | null; // Calendar integration
+  deleted_at: string | null; // Soft delete timestamp
+  type: string | null; // Document type
+  overview: string | null; // AI-generated overview
+  public: boolean; // Public visibility
+  people: DocumentPeople; // Creator and attendees
+  chapters: any[] | null; // Document chapters
+  meeting_end_count: number; // Meeting session count
+  selected_template: string | null; // Applied template ID
+  valid_meeting: boolean; // Meeting validation status
+  summary: string | null; // AI-generated summary
+  has_shareable_link: boolean; // Sharing link status
+  show_private_notes: boolean; // Private notes visibility
+  attachments: any[]; // File attachments
+  privacy_mode_enabled: boolean; // Privacy mode status
+  sharing_link_visibility: string; // Sharing visibility
+  last_viewed_panel?: {
+    // Panel content (optional)
     content: ProseMirrorDocument;
   };
 }
@@ -886,7 +922,7 @@ interface DocumentPeople {
 }
 
 interface ProseMirrorDocument {
-  type: "doc";
+  type: 'doc';
   content: Array<{
     type: string;
     content?: any[];
@@ -931,12 +967,12 @@ interface DocumentMetadata {
 ```typescript
 interface TranscriptSegment {
   document_id: string;
-  start_timestamp: string;        // ISO8601
-  end_timestamp: string;          // ISO8601
-  text: string;                   // Transcribed text
-  source: "microphone" | "system";  // Audio source
-  id: string;                     // Segment identifier
-  is_final: boolean;              // Finalization status
+  start_timestamp: string; // ISO8601
+  end_timestamp: string; // ISO8601
+  text: string; // Transcribed text
+  source: 'microphone' | 'system'; // Audio source
+  id: string; // Segment identifier
+  is_final: boolean; // Finalization status
 }
 ```
 
@@ -947,23 +983,23 @@ interface TranscriptSegment {
 ```typescript
 interface PanelTemplate {
   id: string;
-  is_granola: boolean;            // Official template
-  created_at: string;             // ISO8601
-  updated_at: string;             // ISO8601
-  owner_id: string | null;        // null for official
-  category: string;               // Template category
-  title: string;                  // Template name
-  deleted_at: string | null;      // Soft delete timestamp
+  is_granola: boolean; // Official template
+  created_at: string; // ISO8601
+  updated_at: string; // ISO8601
+  owner_id: string | null; // null for official
+  category: string; // Template category
+  title: string; // Template name
+  deleted_at: string | null; // Soft delete timestamp
   sections: Array<{
     id: string;
     heading: string;
     section_description: string;
   }>;
-  color: string;                  // Hex color code
-  symbol: string;                 // Emoji/icon
-  description: string;            // Template description
-  shared_with: string;            // Sharing scope
-  copied_from: string;            // Source template
+  color: string; // Hex color code
+  symbol: string; // Emoji/icon
+  description: string; // Template description
+  shared_with: string; // Sharing scope
+  copied_from: string; // Source template
   user_types: Array<{
     user_type: string;
   }>;
@@ -998,8 +1034,8 @@ const client = new GranolaClient({
   baseUrl: 'https://api.granola.ai',
   httpOpts: {
     timeout: 10000,
-    retries: 3
-  }
+    retries: 3,
+  },
 });
 
 // Fetch workspaces
@@ -1008,7 +1044,7 @@ const workspaces = await client.getWorkspaces();
 // Fetch documents with pagination
 const docs = await client.getDocuments({
   workspace_id: 'workspace-id',
-  limit: 50
+  limit: 50,
 });
 
 // Iterate through all documents
@@ -1086,18 +1122,18 @@ client.v1_get_panel_templates(body?: object)
 
 ```typescript
 interface HttpOpts {
-  timeout?: number;               // Request timeout (default: 5000ms)
-  retries?: number;               // Retry attempts (default: 3)
-  appVersion?: string;            // App version (default: "6.4.0")
-  clientType?: string;            // Client type (default: "electron")
-  clientPlatform?: string;        // OS platform (default: "darwin")
-  clientArchitecture?: string;    // CPU architecture (default: "arm64")
-  electronVersion?: string;       // Electron version
-  chromeVersion?: string;         // Chrome version
-  nodeVersion?: string;           // Node.js version
-  osVersion?: string;             // OS version
-  osBuild?: string;               // OS build number
-  clientHeaders?: Record<string, string>;  // Additional headers
+  timeout?: number; // Request timeout (default: 5000ms)
+  retries?: number; // Retry attempts (default: 3)
+  appVersion?: string; // App version (default: "6.4.0")
+  clientType?: string; // Client type (default: "electron")
+  clientPlatform?: string; // OS platform (default: "darwin")
+  clientArchitecture?: string; // CPU architecture (default: "arm64")
+  electronVersion?: string; // Electron version
+  chromeVersion?: string; // Chrome version
+  nodeVersion?: string; // Node.js version
+  osVersion?: string; // OS version
+  osBuild?: string; // OS build number
+  clientHeaders?: Record<string, string>; // Additional headers
 }
 ```
 
@@ -1107,18 +1143,18 @@ interface HttpOpts {
 
 ### HTTP Status Codes
 
-| Code | Description | Action |
-|------|-------------|--------|
-| 200 | Success | Request completed successfully |
-| 204 | No Content | Success with no response body |
-| 400 | Bad Request | Check request parameters |
-| 401 | Unauthorized | Token expired or invalid - refresh token |
-| 403 | Forbidden | Insufficient permissions |
-| 404 | Not Found | Resource doesn't exist |
-| 429 | Too Many Requests | Rate limited - retry with backoff |
-| 500 | Internal Server Error | Server error - retry with backoff |
-| 502 | Bad Gateway | Temporary server issue - retry |
-| 503 | Service Unavailable | Service down - retry later |
+| Code | Description           | Action                                   |
+| ---- | --------------------- | ---------------------------------------- |
+| 200  | Success               | Request completed successfully           |
+| 204  | No Content            | Success with no response body            |
+| 400  | Bad Request           | Check request parameters                 |
+| 401  | Unauthorized          | Token expired or invalid - refresh token |
+| 403  | Forbidden             | Insufficient permissions                 |
+| 404  | Not Found             | Resource doesn't exist                   |
+| 429  | Too Many Requests     | Rate limited - retry with backoff        |
+| 500  | Internal Server Error | Server error - retry with backoff        |
+| 502  | Bad Gateway           | Temporary server issue - retry           |
+| 503  | Service Unavailable   | Service down - retry later               |
 
 ---
 
@@ -1171,9 +1207,9 @@ The TypeScript client includes automatic retry logic:
 const client = new GranolaClient({
   apiKey: 'token',
   httpOpts: {
-    retries: 5,        // Increase retry attempts
-    timeout: 10000     // 10 second timeout
-  }
+    retries: 5, // Increase retry attempts
+    timeout: 10000, // 10 second timeout
+  },
 });
 ```
 
@@ -1196,7 +1232,7 @@ async function fetchWithBackoff(fetchFn: () => Promise<any>, maxRetries = 3) {
       return await fetchFn();
     } catch (error) {
       if (error.status === 429 && attempt < maxRetries - 1) {
-        const retryAfter = error.headers?.['retry-after'] || (2 ** attempt);
+        const retryAfter = error.headers?.['retry-after'] || 2 ** attempt;
         await sleep(retryAfter * 1000);
         continue;
       }
@@ -1213,12 +1249,14 @@ async function fetchWithBackoff(fetchFn: () => Promise<any>, maxRetries = 3) {
 ### 1. Token Management
 
 **✅ DO:**
+
 - Refresh a rejected access token through Granola's refresh endpoint, then retry once
 - Save new refresh tokens immediately after each authentication
 - Implement automatic token refresh before expiration
 - Store tokens securely (environment variables, secure storage)
 
 **❌ DON'T:**
+
 - Reuse refresh tokens (they're single-use only)
 - Store tokens in client-side code or version control
 - Let tokens expire without automatic refresh
@@ -1229,11 +1267,13 @@ async function fetchWithBackoff(fetchFn: () => Promise<any>, maxRetries = 3) {
 ### 2. Pagination
 
 **✅ DO:**
+
 - Use cursors for consistent pagination
 - Process results in batches
 - Handle empty result sets gracefully
 
 **❌ DON'T:**
+
 - Use offset-based pagination (cursors are more reliable)
 - Assume page size equals actual results
 - Fetch all data at once (memory intensive)
@@ -1249,7 +1289,7 @@ async function fetchAllDocuments(workspaceId: string) {
     const response = await client.getDocuments({
       workspace_id: workspaceId,
       limit: 100,
-      cursor
+      cursor,
     });
 
     allDocs.push(...(response.docs || []));
@@ -1277,10 +1317,10 @@ for await (const doc of client.listAllDocuments({ workspace_id: workspaceId })) 
 ```typescript
 // 1. Get folder contents
 const folders = await client.getDocumentLists();
-const folder = folders.find(f => f.title === 'Sales calls');
+const folder = folders.find((f) => f.title === 'Sales calls');
 
 // 2. Extract document IDs
-const docIds = folder.document_ids || folder.documents?.map(d => d.id);
+const docIds = folder.document_ids || folder.documents?.map((d) => d.id);
 
 // 3. Fetch documents in batches (including shared docs)
 const batchSize = 100;
@@ -1288,14 +1328,14 @@ for (let i = 0; i < docIds.length; i += batchSize) {
   const batch = docIds.slice(i, i + batchSize);
   const response = await fetch('https://api.granola.ai/v1/get-documents-batch', {
     method: 'POST',
-    headers: { 
-      'Authorization': `Bearer ${token}`,
-      'Content-Type': 'application/json'
+    headers: {
+      Authorization: `Bearer ${token}`,
+      'Content-Type': 'application/json',
     },
     body: JSON.stringify({
       document_ids: batch,
-      include_last_viewed_panel: true
-    })
+      include_last_viewed_panel: true,
+    }),
   });
   const { documents } = await response.json();
   // Process documents...
@@ -1307,12 +1347,14 @@ for (let i = 0; i < docIds.length; i += batchSize) {
 ### 4. Error Handling
 
 **✅ DO:**
+
 - Implement comprehensive error handling
 - Log errors with context
 - Retry transient errors with backoff
 - Validate input parameters
 
 **❌ DON'T:**
+
 - Silently swallow errors
 - Retry non-retryable errors (400, 403, 404)
 - Ignore rate limiting (429)
@@ -1322,12 +1364,14 @@ for (let i = 0; i < docIds.length; i += batchSize) {
 ### 5. Performance Optimization
 
 **✅ DO:**
+
 - Batch requests when possible
 - Cache frequently accessed data
 - Use pagination for large datasets
 - Include only necessary fields (`include_last_viewed_panel` when needed)
 
 **❌ DON'T:**
+
 - Make sequential requests when batch endpoints exist
 - Fetch full document content unnecessarily
 - Poll for updates (implement webhook listeners if available)
@@ -1337,11 +1381,13 @@ for (let i = 0; i < docIds.length; i += batchSize) {
 ### 6. Data Consistency
 
 **✅ DO:**
+
 - Handle eventual consistency (workspace/folder assignments may lag)
 - Validate response data structure
 - Account for null/undefined fields
 
 **❌ DON'T:**
+
 - Assume immediate consistency across endpoints
 - Skip null checks on optional fields
 
@@ -1404,6 +1450,7 @@ This specification was created through reverse engineering efforts:
 ### Methodology
 
 The reverse engineering process involved:
+
 1. Inspecting the Granola Electron app's network traffic
 2. Analyzing the token storage file (`supabase.json`)
 3. Decoding JWT tokens to understand authentication structure

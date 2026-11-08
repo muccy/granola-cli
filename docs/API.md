@@ -17,7 +17,7 @@ interface Person {
   details?: {
     employment?: {
       title?: string;
-      name?: string;  // company name
+      name?: string; // company name
     };
     company?: {
       name?: string;
@@ -72,6 +72,7 @@ interface ProseMirrorNode {
 ```
 
 Supported node types:
+
 - `heading` (with `level` attribute: 1-6)
 - `paragraph`
 - `bulletList`, `orderedList`, `listItem`
@@ -81,6 +82,7 @@ Supported node types:
 - `hardBreak`
 
 Supported mark types:
+
 - `bold`, `italic`, `strike`, `underline`
 - `code` (inline code)
 - `link` (with `href` attribute)
@@ -151,10 +153,10 @@ Manages the Granola API client instance.
 
 ```typescript
 // Get authenticated client (exits with code 2 if not authenticated)
-async function getClient(): Promise<GranolaClient>
+async function getClient(): Promise<GranolaClient>;
 
 // Reset client (for testing)
-function resetClient(): void
+function resetClient(): void;
 ```
 
 ### meetings.ts
@@ -163,11 +165,11 @@ Meeting operations.
 
 ```typescript
 interface FilterOptions {
-  search?: string;    // Case-insensitive title search
-  attendee?: string;  // Partial match on attendee name or email
-  date?: Date;        // Filter to specific date
-  since?: Date;       // Filter from date (inclusive)
-  until?: Date;       // Filter up to date (inclusive)
+  search?: string; // Case-insensitive title search
+  attendee?: string; // Partial match on attendee name or email
+  date?: Date; // Filter to specific date
+  since?: Date; // Filter from date (inclusive)
+  until?: Date; // Filter up to date (inclusive)
 }
 
 interface ListOptions extends FilterOptions {
@@ -178,23 +180,23 @@ interface ListOptions extends FilterOptions {
 }
 
 // List meetings (with optional filtering)
-async function list(options?: ListOptions): Promise<Meeting[]>
+async function list(options?: ListOptions): Promise<Meeting[]>;
 
 // Resolve partial meeting ID to full ID (prefix matching)
-async function resolveId(partialId: string): Promise<string | null>
+async function resolveId(partialId: string): Promise<string | null>;
 
 // Get the full document from a batch response, enriched with participant metadata
-async function get(id: string): Promise<Meeting | null>
+async function get(id: string): Promise<Meeting | null>;
 
 // Get manual meeting notes (user-written); non-404 errors propagate
-async function getNotes(id: string): Promise<ProseMirrorDoc | null>
+async function getNotes(id: string): Promise<ProseMirrorDoc | null>;
 
 // Get AI-enhanced meeting notes (from last_viewed_panel); non-404 errors propagate
-async function getEnhancedNotes(id: string): Promise<ProseMirrorDoc | null>
+async function getEnhancedNotes(id: string): Promise<ProseMirrorDoc | null>;
 
 // Get meeting transcript; a missing transcript (HTTP 404) returns [].
 // Authentication, server, and network errors propagate.
-async function getTranscript(id: string): Promise<Utterance[]>
+async function getTranscript(id: string): Promise<Utterance[]>;
 ```
 
 ### workspaces.ts
@@ -203,10 +205,10 @@ Workspace operations.
 
 ```typescript
 // List all workspaces
-async function list(): Promise<Workspace[]>
+async function list(): Promise<Workspace[]>;
 
 // Get a single workspace
-async function get(id: string): Promise<Workspace | null>
+async function get(id: string): Promise<Workspace | null>;
 ```
 
 ### folders.ts
@@ -221,10 +223,10 @@ interface ListOptions {
 }
 
 // List folders
-async function list(options?: ListOptions): Promise<Folder[]>
+async function list(options?: ListOptions): Promise<Folder[]>;
 
 // Get a single folder
-async function get(id: string): Promise<Folder | null>
+async function get(id: string): Promise<Folder | null>;
 ```
 
 ## Libraries
@@ -235,25 +237,25 @@ Credential management using system keychain.
 
 ```typescript
 // Get stored credentials
-async function getCredentials(): Promise<Credentials | null>
+async function getCredentials(): Promise<Credentials | null>;
 
 // Validate the stored session, refreshing rejected access tokens when possible
-async function getAuthenticatedCredentials(): Promise<Credentials | null>
+async function getAuthenticatedCredentials(): Promise<Credentials | null>;
 
 // Validate credentials with Granola's get-user-info endpoint
-async function validateCredentials(creds: Credentials): Promise<boolean>
+async function validateCredentials(creds: Credentials): Promise<boolean>;
 
 // Refresh through Granola's backend and persist rotated credentials
-async function refreshAccessToken(): Promise<Credentials | null>
+async function refreshAccessToken(): Promise<Credentials | null>;
 
 // Save credentials; session replacement callers must hold the refresh lock
-async function saveCredentials(creds: Credentials): Promise<void>
+async function saveCredentials(creds: Credentials): Promise<void>;
 
 // Delete credentials
-async function deleteCredentials(): Promise<void>
+async function deleteCredentials(): Promise<void>;
 
 // Parse desktop token stores and browser token responses
-function parseSupabaseJson(json: string): Credentials | null
+function parseSupabaseJson(json: string): Credentials | null;
 ```
 
 ### browser-auth.ts
@@ -270,22 +272,22 @@ Configuration management using conf package.
 
 ```typescript
 // Get entire config
-function getConfig(): Config
+function getConfig(): Config;
 
 // Get a config value
-function getConfigValue<K extends keyof Config>(key: K): Config[K]
+function getConfigValue<K extends keyof Config>(key: K): Config[K];
 
 // Set a config value
-function setConfigValue<K extends keyof Config>(key: K, value: Config[K]): void
+function setConfigValue<K extends keyof Config>(key: K, value: Config[K]): void;
 
 // Reset config to defaults
-function resetConfig(): void
+function resetConfig(): void;
 
 // Alias management
-function getAlias(name: string): string | undefined
-function setAlias(name: string, command: string): void
-function deleteAlias(name: string): void
-function listAliases(): Record<string, string>
+function getAlias(name: string): string | undefined;
+function setAlias(name: string, command: string): void;
+function deleteAlias(name: string): void;
+function listAliases(): Record<string, string>;
 ```
 
 ### output.ts
@@ -301,16 +303,16 @@ interface ColumnDef<T> {
 }
 
 // Format data as a table
-function table<T extends object>(data: T[], columns: ColumnDef<T>[]): string
+function table<T extends object>(data: T[], columns: ColumnDef<T>[]): string;
 
 // Format ISO date string
-function formatDate(isoDate: string): string
+function formatDate(isoDate: string): string;
 
 // Format duration in seconds
-function formatDuration(seconds: number): string
+function formatDuration(seconds: number): string;
 
 // Truncate string to length
-function truncate(str: string, length: number): string
+function truncate(str: string, length: number): string;
 ```
 
 ### pager.ts
@@ -319,7 +321,7 @@ Pager integration for long content.
 
 ```typescript
 // Pipe content through system pager
-async function pipeToPager(content: string): Promise<void>
+async function pipeToPager(content: string): Promise<void>;
 ```
 
 Uses `GRANOLA_PAGER`, then `PAGER` environment variable, then `less -R` as fallback.
@@ -330,7 +332,7 @@ Convert ProseMirror JSON to Markdown.
 
 ```typescript
 // Convert ProseMirror document to Markdown string
-function toMarkdown(doc: ProseMirrorDoc): string
+function toMarkdown(doc: ProseMirrorDoc): string;
 ```
 
 ### transcript.ts
@@ -344,7 +346,7 @@ interface FormatOptions {
 }
 
 // Format transcript as readable text
-function formatTranscript(utterances: Utterance[], options?: FormatOptions): string
+function formatTranscript(utterances: Utterance[], options?: FormatOptions): string;
 ```
 
 ### date-parser.ts
@@ -355,10 +357,10 @@ Natural language date parsing (zero dependencies).
 // Parse natural date string to Date object
 // Supports: today, yesterday, tomorrow, last week, last month,
 // N days/weeks/months ago, YYYY-MM-DD, Dec 20, 20 Dec 2024
-function parseDate(input: string): Date | null
+function parseDate(input: string): Date | null;
 
 // Parse and validate date for CLI option, throws on invalid
-function validateDateOption(value: string, optionName: string): Date
+function validateDateOption(value: string, optionName: string): Date;
 ```
 
 ### filters.ts
@@ -375,22 +377,22 @@ interface FilterOptions {
 }
 
 // Case-insensitive partial match on meeting title
-function matchesSearch(meeting: Meeting, query: string): boolean
+function matchesSearch(meeting: Meeting, query: string): boolean;
 
 // Partial match on attendee name or email (case-insensitive)
-function matchesAttendee(meeting: Meeting, query: string): boolean
+function matchesAttendee(meeting: Meeting, query: string): boolean;
 
 // Check if meeting falls on specific date
-function matchesDate(meeting: Meeting, date: Date): boolean
+function matchesDate(meeting: Meeting, date: Date): boolean;
 
 // Check if meeting is within date range (inclusive)
-function matchesDateRange(meeting: Meeting, since?: Date, until?: Date): boolean
+function matchesDateRange(meeting: Meeting, since?: Date, until?: Date): boolean;
 
 // Check if any filters are active
-function hasActiveFilters(options: FilterOptions): boolean
+function hasActiveFilters(options: FilterOptions): boolean;
 
 // Apply all filters to meeting list (AND logic)
-function applyFilters(meetings: Meeting[], options: FilterOptions): Meeting[]
+function applyFilters(meetings: Meeting[], options: FilterOptions): Meeting[];
 ```
 
 ## Command Factory Functions
@@ -438,9 +440,9 @@ export const xxxCommand: Command  // Pre-created instance
 
 ## Exit Codes
 
-| Code | Constant | Description |
-|------|----------|-------------|
-| 0 | - | Success |
-| 1 | - | General error |
-| 2 | - | Authentication required |
-| 4 | - | Resource not found |
+| Code | Constant | Description             |
+| ---- | -------- | ----------------------- |
+| 0    | -        | Success                 |
+| 1    | -        | General error           |
+| 2    | -        | Authentication required |
+| 4    | -        | Resource not found      |

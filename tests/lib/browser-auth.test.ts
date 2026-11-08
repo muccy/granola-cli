@@ -208,26 +208,26 @@ describe('browser authentication', () => {
     expect(prompt.close).toHaveBeenCalledOnce();
   });
 
-  it.each([
-    'https://www.granola.ai/app-redirect',
-    'granola://login-complete',
-  ])('accepts the known callback %s', async (base) => {
-    prompt.question.mockImplementation(async () => callbackUrl(base));
-    await expect(loginWithBrowser()).resolves.toEqual(credentials);
-  });
+  it.each(['https://www.granola.ai/app-redirect', 'granola://login-complete'])(
+    'accepts the known callback %s',
+    async (base) => {
+      prompt.question.mockImplementation(async () => callbackUrl(base));
+      await expect(loginWithBrowser()).resolves.toEqual(credentials);
+    },
+  );
 
-  it.each([
-    '#',
-    '#/login-in-progress?',
-  ])('reads callback parameters from a fragment %s', async (hash) => {
-    prompt.question.mockImplementation(async () => {
-      const callback = new URL(callbackUrl());
-      callback.hash = hash + callback.search.slice(1);
-      callback.search = '';
-      return callback.toString();
-    });
-    await expect(loginWithBrowser()).resolves.toEqual(credentials);
-  });
+  it.each(['#', '#/login-in-progress?'])(
+    'reads callback parameters from a fragment %s',
+    async (hash) => {
+      prompt.question.mockImplementation(async () => {
+        const callback = new URL(callbackUrl());
+        callback.hash = hash + callback.search.slice(1);
+        callback.search = '';
+        return callback.toString();
+      });
+      await expect(loginWithBrowser()).resolves.toEqual(credentials);
+    },
+  );
 
   it('preserves callback authContext and SSO parameters in the exchange', async () => {
     prompt.question.mockImplementation(async () => {
@@ -305,45 +305,45 @@ describe('browser authentication', () => {
     expect(prompt.close).toHaveBeenCalledOnce();
   });
 
-  it.each([
-    false,
-    true,
-  ])('bounds sign-in to five minutes (auto callback: %s)', async (autoCallback) => {
-    vi.useFakeTimers();
-    prompt.question.mockImplementation(
-      (_question, { signal }) =>
-        new Promise((_resolve, reject) => {
-          signal.addEventListener('abort', () => reject(new Error('question aborted')), {
-            once: true,
-          });
-        }),
-    );
-    const result = expect(loginWithBrowser({ autoCallback })).rejects.toThrow(/timed out/i);
-    await vi.advanceTimersByTimeAsync(5 * 60 * 1000);
-    await result;
-    expect(fetchMock).not.toHaveBeenCalled();
-    expect(prompt.close).toHaveBeenCalledOnce();
-    if (autoCallback) {
-      expect(vi.mocked(waitForChromeCallback).mock.calls[0][1].aborted).toBe(true);
-    }
-  });
+  it.each([false, true])(
+    'bounds sign-in to five minutes (auto callback: %s)',
+    async (autoCallback) => {
+      vi.useFakeTimers();
+      prompt.question.mockImplementation(
+        (_question, { signal }) =>
+          new Promise((_resolve, reject) => {
+            signal.addEventListener('abort', () => reject(new Error('question aborted')), {
+              once: true,
+            });
+          }),
+      );
+      const result = expect(loginWithBrowser({ autoCallback })).rejects.toThrow(/timed out/i);
+      await vi.advanceTimersByTimeAsync(5 * 60 * 1000);
+      await result;
+      expect(fetchMock).not.toHaveBeenCalled();
+      expect(prompt.close).toHaveBeenCalledOnce();
+      if (autoCallback) {
+        expect(vi.mocked(waitForChromeCallback).mock.calls[0][1].aborted).toBe(true);
+      }
+    },
+  );
 
-  it.each([
-    false,
-    true,
-  ])('cancels on terminal interrupt (auto callback: %s)', async (autoCallback) => {
-    prompt.question.mockImplementation(
-      (_question, { signal }) =>
-        new Promise((_resolve, reject) => {
-          signal.addEventListener('abort', () => reject(new Error('question aborted')), {
-            once: true,
-          });
-          queueMicrotask(() => listeners.get('SIGINT')?.());
-        }),
-    );
-    await expect(loginWithBrowser({ autoCallback })).rejects.toThrow(/cancelled/i);
-    expect(fetchMock).not.toHaveBeenCalled();
-  });
+  it.each([false, true])(
+    'cancels on terminal interrupt (auto callback: %s)',
+    async (autoCallback) => {
+      prompt.question.mockImplementation(
+        (_question, { signal }) =>
+          new Promise((_resolve, reject) => {
+            signal.addEventListener('abort', () => reject(new Error('question aborted')), {
+              once: true,
+            });
+            queueMicrotask(() => listeners.get('SIGINT')?.());
+          }),
+      );
+      await expect(loginWithBrowser({ autoCallback })).rejects.toThrow(/cancelled/i);
+      expect(fetchMock).not.toHaveBeenCalled();
+    },
+  );
 
   it('reports exchange HTTP failure without including its response body', async () => {
     fetchMock.mockResolvedValueOnce(new Response('secret exchange response', { status: 401 }));

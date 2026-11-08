@@ -147,18 +147,20 @@ granola meeting list [options]
 ```
 
 **Options:**
-| Option | Description |
-|--------|-------------|
-| `-l, --limit <n>` | Number of meetings to show (default: 20) |
-| `-w, --workspace <id>` | Filter by workspace ID |
-| `-f, --folder <id>` | Filter by folder ID |
-| `-s, --search <query>` | Search in meeting titles (case-insensitive) |
+
+| Option                  | Description                                      |
+| ----------------------- | ------------------------------------------------ |
+| `-l, --limit <n>`       | Number of meetings to show (default: 20)         |
+| `-w, --workspace <id>`  | Filter by workspace ID                           |
+| `-f, --folder <id>`     | Filter by folder ID                              |
+| `-s, --search <query>`  | Search in meeting titles (case-insensitive)      |
 | `-a, --attendee <name>` | Filter by attendee name or email (partial match) |
-| `-d, --date <date>` | Filter meetings on a specific date |
-| `--since <date>` | Filter meetings from date (inclusive) |
-| `--until <date>` | Filter meetings up to date (inclusive) |
+| `-d, --date <date>`     | Filter meetings on a specific date               |
+| `--since <date>`        | Filter meetings from date (inclusive)            |
+| `--until <date>`        | Filter meetings up to date (inclusive)           |
 
 **Date formats supported:**
+
 - Keywords: `today`, `yesterday`, `tomorrow`
 - Relative: `3 days ago`, `2 weeks ago`, `last week`, `last month`
 - ISO: `2024-12-20`, `2024/12/20`
@@ -203,8 +205,9 @@ granola meeting view <id> [options]
 ```
 
 **Options:**
-| Option | Description |
-|--------|-------------|
+
+| Option  | Description             |
+| ------- | ----------------------- |
 | `--web` | Open meeting in browser |
 
 **Example:**
@@ -296,9 +299,10 @@ granola meeting transcript <id> [options]
 Use `-o text|json|yaml|toon` to choose between a pager-friendly transcript or structured output (JSON, YAML, or Toon format) for scripting.
 
 **Options:**
-| Option | Description |
-|--------|-------------|
-| `-t, --timestamps` | Include timestamps |
+
+| Option                | Description                                                  |
+| --------------------- | ------------------------------------------------------------ |
+| `-t, --timestamps`    | Include timestamps                                           |
 | `-s, --source <type>` | Filter by source: `microphone`, `system`, or `all` (default) |
 
 **Example (default):**
@@ -334,8 +338,9 @@ granola meeting export <id> [options]
 Exports complete meeting data including metadata, notes, and transcript.
 
 **Options:**
-| Option | Description |
-|--------|-------------|
+
+| Option                  | Description                               |
+| ----------------------- | ----------------------------------------- |
 | `-f, --format <format>` | Output format: `json` (default) or `toon` |
 
 **Example:**
@@ -399,8 +404,9 @@ granola folder list [options]
 ```
 
 **Options:**
-| Option | Description |
-|--------|-------------|
+
+| Option                 | Description            |
+| ---------------------- | ---------------------- |
 | `-w, --workspace <id>` | Filter by workspace ID |
 
 **Example:**
@@ -459,11 +465,12 @@ granola config set <key> <value>
 ```
 
 **Available keys:**
-| Key | Description |
-|-----|-------------|
-| `default_workspace` | Default workspace ID for filtering (used when `--workspace` is omitted) |
-| `pager` | Pager command (e.g., `less -R`). Used when `GRANOLA_PAGER` and `PAGER` are unset. |
-| `aliases` | JSON object mapping alias names to commands (e.g., `{"meet":"meeting list --limit 10"}`) |
+
+| Key                 | Description                                                                              |
+| ------------------- | ---------------------------------------------------------------------------------------- |
+| `default_workspace` | Default workspace ID for filtering (used when `--workspace` is omitted)                  |
+| `pager`             | Pager command (e.g., `less -R`). Used when `GRANOLA_PAGER` and `PAGER` are unset.        |
+| `aliases`           | JSON object mapping alias names to commands (e.g., `{"meet":"meeting list --limit 10"}`) |
 
 > Values are validated. Alias updates must be valid JSON objects whose values are string commands.
 
@@ -518,11 +525,11 @@ granola alias delete <name>
 
 Available on all commands:
 
-| Option          | Description                  |
-| --------------- | ---------------------------- |
-| `--help`        | Show help for command        |
+| Option          | Description                   |
+| --------------- | ----------------------------- |
+| `--help`        | Show help for command         |
 | `--no-pager`    | Disable pager for long output |
-| `-V, --version` | Show version number          |
+| `-V, --version` | Show version number           |
 
 > **Note:** Structured output is configured per command via `-o, --output <format>`. See each command’s help for available formats (JSON, YAML, TOON, etc.).
 
@@ -767,14 +774,14 @@ Rebuild after source changes; the linked command uses `dist/main.js` from this c
 
 ### Scripts
 
-| Command                 | Description                    |
-| ----------------------- | ------------------------------ |
-| `npm run build`         | Build the project              |
-| `npm run dev`           | Build in watch mode            |
-| `npm test`              | Run tests                      |
-| `npm run test:watch`    | Run tests in watch mode        |
-| `npm run test:coverage` | Run tests with coverage report |
-| `npm run typecheck`     | Type-check without emitting    |
+| Command                 | Description                                     |
+| ----------------------- | ----------------------------------------------- |
+| `npm run build`         | Build the project                               |
+| `npm run dev`           | Build in watch mode                             |
+| `npm test`              | Run tests                                       |
+| `npm run test:watch`    | Run tests in watch mode                         |
+| `npm run test:coverage` | Run tests with coverage report                  |
+| `npm run typecheck`     | Type-check without emitting                     |
 | `npm run test:e2e`      | Test the built CLI against your Granola account |
 
 ### Testing

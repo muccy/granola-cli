@@ -19,6 +19,7 @@ npm run check:fix      # Auto-fix check issues
 ```
 
 **Running a single test file:**
+
 ```bash
 npx vitest run tests/lib/auth.test.ts
 ```
@@ -73,22 +74,22 @@ main.ts (Commander)
 ## Key Patterns
 
 ### Command Pattern
+
 ```typescript
 import { createGranolaDebug } from '../../lib/debug.js';
 const debug = createGranolaDebug('cmd:name');
 
 export function createXCommand(): Command {
-  return new Command('x')
-    .description('...')
-    .action(async (_, cmd) => {
-      const opts = cmd.optsWithGlobals();
-      // ...
-    });
+  return new Command('x').description('...').action(async (_, cmd) => {
+    const opts = cmd.optsWithGlobals();
+    // ...
+  });
 }
 export const xCommand = createXCommand();
 ```
 
 ### Service Pattern
+
 ```typescript
 import { getClient } from './client.js';
 
@@ -99,7 +100,9 @@ export async function getSomething(id: string) {
 ```
 
 ### ESM Imports
+
 All imports use `.js` extension (required for ESM):
+
 ```typescript
 import { something } from './path.js';
 ```
@@ -112,6 +115,7 @@ import { something } from './path.js';
 - **Fixtures**: `tests/fixtures/` mirror API response structures
 
 ### Test Pattern
+
 ```typescript
 import { Command } from 'commander';
 import { createXCommand } from '../../src/commands/x.js';
